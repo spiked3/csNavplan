@@ -1,0 +1,55 @@
+﻿<Window x:Class="csNavplan.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:csNavplan"
+        xmlns:xtk="http://schemas.xceed.com/wpf/xaml/toolkit"        
+        mc:Ignorable="d"
+        Title="csNavPlan - spiked3.com"
+        DataContext="{Binding RelativeSource={RelativeSource Self}}" Closing="Window_Closing" Loaded="Window_Loaded" >
+
+    <DockPanel LastChildFill="True">
+        <Menu DockPanel.Dock="Top" Margin="2" >
+            <MenuItem Header="_File" >
+                <MenuItem Header="_Clear" Click="Clear_Click"  />
+                <MenuItem Header="_Save" Click="Save_Click" ContextMenuClosing="SaveAs_Click" />
+                <MenuItem Header="S_ave as ...." />
+                <MenuItem Header="_New" />
+                <MenuItem Header="_Import Image ..." Click="ImportImage_Click" />
+                <MenuItem Header="Sa_ve Image ..." Click="SaveImage_Click" />
+                <Separator />
+                <MenuItem Header="E_xit" Click="Exit_Click" />
+            </MenuItem>
+            <MenuItem Header="Color ..." Click="Color_Click" />
+
+        </Menu>
+        <StatusBar DockPanel.Dock="Bottom" >
+            <StatusBarItem >
+                <TextBlock Text="{Binding MouseLocal}" />
+            </StatusBarItem>
+        </StatusBar>
+        <StackPanel Orientation="Vertical" Width="196" DockPanel.Dock="Right">
+            <!--<xtk:PropertyGrid SelectedObject="{Binding Plan}" ShowSearchBox="False" ShowSummary="False" ShowSortOptions="False" />-->
+            <local:AlignPoint DataContext="{Binding Plan.Align1}" Height="Auto" Width="Auto" />
+            <local:AlignPoint DataContext="{Binding Plan.Align2}" Height="Auto" Width="Auto" />
+            <local:AlignPoint DataContext="{Binding Plan.Origin}" Height="Auto" Width="Auto" />
+        </StackPanel>
+
+        <local:PlanCanvas x:Name="grid1" Background="{Binding GridImageBrush}" GridDivisions="{Binding GridDivisions}" 
+                          MouseRightButtonDown="grid1_MouseRightButtonDown" MouseMove="grid1_MouseMove" >
+            <local:PlanCanvas.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Align1" Click="Align1_Click" />
+                    <MenuItem Header="Align2" Click="Align2_Click" />
+                    <MenuItem Header="Origin" Click="Origin_Click" />
+                    <MenuItem Header="WayPoint" />
+                    <MenuItem Header="Action WayPoint" />
+                    <MenuItem Header="Test" />
+                </ContextMenu>
+            </local:PlanCanvas.ContextMenu>
+            <Button Content="Refresh" Canvas.Left="10" Canvas.Bottom="10" Width="75" Click="Refresh_Click" />
+            <Button Content="Google" Canvas.Left="10" Canvas.Bottom="40" Width="75" Click="Google_Click" />
+        </local:PlanCanvas>
+    </DockPanel>
+</Window>

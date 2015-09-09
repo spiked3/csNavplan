@@ -1,0 +1,27 @@
+﻿<Window x:Class="csNavplan.ColorsDlg"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:csNavplan"
+        mc:Ignorable="d"
+        Title="Colors" Height="300" Width="300" >
+    
+    <Window.Resources>
+        <ItemsPanelTemplate x:Key="itemsPanelTemplate1">
+            <UniformGrid Columns="8"></UniformGrid>
+        </ItemsPanelTemplate>
+
+        <DataTemplate x:Key="dataTemplate1">
+            <Canvas Margin="1" Width="100" Height="30">
+                <Border BorderBrush="Black" BorderThickness="1" Background="{Binding Brush}" Width="100" Height="30"/>
+                <TextBlock Text="{Binding Name}" TextAlignment="Center" ToolTip="{Binding Brush.Color}" Width="100" Height="30" />
+            </Canvas>
+        </DataTemplate>
+    </Window.Resources>
+    <Grid>
+        
+            <ListBox Name="listBox1" ItemsPanel="{StaticResource itemsPanelTemplate1}" ItemTemplate="{StaticResource dataTemplate1}" />
+        
+    </Grid>
+</Window>

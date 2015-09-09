@@ -1,0 +1,53 @@
+﻿<UserControl x:Class="csNavplan.AlignPoint"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:csNavplan"
+             mc:Ignorable="d" Height="100.497" Width="182.938">
+    <Grid Background="White">
+        <Grid.Resources>
+            <Style TargetType="TextBlock">
+                <Setter Property="Margin" Value="2" />
+                <Setter Property="Padding" Value="4" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+                <Setter Property="HorizontalAlignment" Value="Right" />
+            </Style>
+            <Style TargetType="TextBox" >
+                <Setter Property="Margin" Value="4" />
+                <Setter Property="Width" Value="48" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+                <Setter Property="HorizontalAlignment" Value="Left" />
+            </Style>
+        </Grid.Resources>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="64*"/>
+            <ColumnDefinition Width="56*"/>
+            <ColumnDefinition Width="56*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+        <Grid Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Background="Gray" >
+            <TextBlock Text="{Binding PointName,FallbackValue=PointName}" Foreground="White" />
+        </Grid>
+
+        <TextBlock Text="Image(pct)" Grid.Row="1" />
+        <TextBlock Text="Local(XY)" Grid.Row="2" />
+        <TextBlock Text="GPS" Grid.Row="3" />
+        <TextBlock Text="UTM" Grid.Row="4" />
+
+        <TextBox Grid.Row="1" Text="{Binding AB.X,StringFormat=F2}" Grid.Column="1" />
+        <TextBox Grid.Row="1" Text="{Binding AB.Y,StringFormat=F2}" Grid.Column="2" />
+        <TextBox Grid.Row="2" Text="{Binding XY.X,StringFormat=F3}" Grid.Column="1" />
+        <TextBox Grid.Row="2" Text="{Binding XY.Y,StringFormat=F3}" Grid.Column="2" />
+        <TextBox Grid.Row="3" Text="{Binding GpsCoord.X,StringFormat=F5}" Grid.Column="1" TextChanged="Gps_TextChanged" />
+        <TextBox Grid.Row="3" Text="{Binding GpsCoord.Y,StringFormat=F5}" Grid.Column="2" TextChanged="Gps_TextChanged" />
+        <TextBox Grid.Row="4" Text="{Binding UtmCoord.X,StringFormat=F5}" Grid.Column="1" TextChanged="Utm_TextChanged" />
+        <TextBox Grid.Row="4" Text="{Binding UtmCoord.Y,StringFormat=F5}" Grid.Column="2" TextChanged="Utm_TextChanged" />
+    </Grid>
+</UserControl>
