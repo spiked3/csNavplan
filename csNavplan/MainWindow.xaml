@@ -26,11 +26,38 @@
         </Menu>
         <StatusBar DockPanel.Dock="Bottom" >
             <StatusBarItem >
-                <TextBlock Text="{Binding MouseLocal}" />
+                <StackPanel Orientation="Horizontal" >
+                    <TextBlock Text="Mouse Local " />
+                    <TextBlock Text="{Binding MouseLocal,StringFormat={}{0:F3}}" />
+                </StackPanel>
+            </StatusBarItem>
+            <StatusBarItem >
+                <StackPanel Orientation="Horizontal" >
+                    <TextBlock Text="Mouse Utm " />
+                    <TextBlock Text="{Binding MouseUtm,StringFormat={}{0:F5}}" />
+                </StackPanel>
+            </StatusBarItem>
+            <StatusBarItem >
+                <StackPanel Orientation="Horizontal" >
+                    <TextBlock Text="Mouse Gps " />
+                    <TextBlock Text="{Binding MouseGps,StringFormat={}{0:F5}}" />
+                </StackPanel>
+            </StatusBarItem>
+            <Separator />
+            <StatusBarItem >
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Distance between Align Points " />
+                    <TextBlock Text="{Binding AlignUtmDistance,StringFormat={}{0:F5}}" />
+                </StackPanel>
             </StatusBarItem>
         </StatusBar>
-        <StackPanel Orientation="Vertical" Width="196" DockPanel.Dock="Right">
+        <StackPanel Orientation="Vertical" DockPanel.Dock="Right">
             <!--<xtk:PropertyGrid SelectedObject="{Binding Plan}" ShowSearchBox="False" ShowSummary="False" ShowSortOptions="False" />-->
+            <local:AlignPoint DataContext="{Binding Plan.ImageData}" Height="Auto" Width="Auto" />
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <Button Content="Refresh" Width="75" Click="Refresh_Click" Margin="4" />
+                <Button Content="Google" Width="75" Click="Google_Click" Margin="4" />
+            </StackPanel>
             <local:AlignPoint DataContext="{Binding Plan.Align1}" Height="Auto" Width="Auto" />
             <local:AlignPoint DataContext="{Binding Plan.Align2}" Height="Auto" Width="Auto" />
             <local:AlignPoint DataContext="{Binding Plan.Origin}" Height="Auto" Width="Auto" />
@@ -48,8 +75,6 @@
                     <MenuItem Header="Test" />
                 </ContextMenu>
             </local:PlanCanvas.ContextMenu>
-            <Button Content="Refresh" Canvas.Left="10" Canvas.Bottom="10" Width="75" Click="Refresh_Click" />
-            <Button Content="Google" Canvas.Left="10" Canvas.Bottom="40" Width="75" Click="Google_Click" />
         </local:PlanCanvas>
     </DockPanel>
 </Window>

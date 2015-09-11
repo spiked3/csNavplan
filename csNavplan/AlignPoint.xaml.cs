@@ -58,12 +58,12 @@ namespace csNavplan
 
             if (p.GpsCoord == null)
             {
-                p.GpsCoord = new NpPoint(0, 0);
+                p.GpsCoord = new Point(0, 0);
                 return;
             }
 
-            Utm u = new Utm(p.GpsCoord.X, p.GpsCoord.Y);
-            p.UtmCoord = new NpPoint(u.Easting, u.Northing);
+            Utm u = new Utm(p.GpsCoord.Y, p.GpsCoord.X);
+            p.UtmCoord = new Point(u.Easting, u.Northing);
 
             p.dt.Stop();
             p.dt = null;

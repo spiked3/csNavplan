@@ -27,6 +27,14 @@ namespace csNavplan
     {
         static readonly string API_KEY = "AIzaSyAik-F33VKp4evJfuwDD_YTmh38bBZRcOw";
 
+        public double AlignUtmDistance
+        {
+            get { return (double)GetValue(AlignUtmDistanceProperty); }
+            set { SetValue(AlignUtmDistanceProperty, value); }
+        }
+        public static readonly DependencyProperty AlignUtmDistanceProperty =
+            DependencyProperty.Register("AlignUtmDistance", typeof(double), typeof(MainWindow));
+
         public BitmapImage GridImage
         {
             get { return (BitmapImage)GetValue(GridImageProperty); }
@@ -46,18 +54,34 @@ namespace csNavplan
         public Plan Plan
         {
             get { return (Plan)GetValue(PlanProperty); }
-            set { SetValue(PlanProperty, value); }
+            set { SetValue(PlanProperty, value); Refresh(); }
         }
         public static readonly DependencyProperty PlanProperty =
             DependencyProperty.Register("Plan", typeof(Plan), typeof(MainWindow));
 
-        public string MouseLocal
+        public Point MouseGps
         {
-            get { return (string)GetValue(MouseLocalProperty); }
+            get { return (Point)GetValue(MouseGpsProperty); }
+            set { SetValue(MouseGpsProperty, value); }
+        }
+        public static readonly DependencyProperty MouseGpsProperty =
+            DependencyProperty.Register("MouseGps", typeof(Point), typeof(MainWindow), new PropertyMetadata(new Point(0,0)));
+
+        public Point MouseUtm
+        {
+            get { return (Point)GetValue(MouseUtmProperty); }
+            set { SetValue(MouseUtmProperty, value); }
+        }
+        public static readonly DependencyProperty MouseUtmProperty =
+            DependencyProperty.Register("MouseUtm", typeof(Point), typeof(MainWindow), new PropertyMetadata(new Point(0,0)));
+
+        public Point MouseLocal
+        {
+            get { return (Point)GetValue(MouseLocalProperty); }
             set { SetValue(MouseLocalProperty, value); }
         }
         public static readonly DependencyProperty MouseLocalProperty =
-            DependencyProperty.Register("MouseLocal", typeof(string), typeof(MainWindow), new PropertyMetadata("999,999"));
+            DependencyProperty.Register("MouseLocal", typeof(Point), typeof(MainWindow), new PropertyMetadata(new Point(0,0)));
 
         public Brush GridImageBrush
         {
@@ -88,6 +112,11 @@ namespace csNavplan
             InitializeComponent();
         }
 
+        public Point ScreenPoint2Pct(Point a)
+        {
+            return new Point(a.X / grid1.ActualWidth, a.Y / grid1.ActualHeight);
+        }
+
         private void ImportImage_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog d = new OpenFileDialog { Filter = "Image Files|*.bmp;*.jpg;*.jpeg;*.png;*.gif|All Files|*.*" };
@@ -96,11 +125,6 @@ namespace csNavplan
                 GridImageBrush = new ImageBrush { ImageSource = new BitmapImage(new Uri(d.FileName)) };
                 Plan.ImageFileName = d.FileName;
             }
-        }
-
-        NpPoint ScreenPoint2GridPoint(NpPoint a)
-        {
-            return new NpPoint(a.X / grid1.ActualWidth, a.Y / grid1.ActualHeight);
         }
 
         private void Window_Closing(object sender, CancelEventArgs e)
@@ -124,7 +148,12 @@ namespace csNavplan
                 GridImageBrush = new ImageBrush { ImageSource = new BitmapImage(new Uri(Plan.ImageFileName)) };
             else
                 GridImageBrush = new SolidColorBrush(Colors.Beige);
+            Plan.AlignmentPointChanged += Plan_AlignmentPointChanged;
+        }
 
+        private void Plan_AlignmentPointChanged(object sender, EventArgs e)
+        {
+            
         }
 
         private void Exit_Click(object sender, RoutedEventArgs e)
@@ -134,20 +163,20 @@ namespace csNavplan
 
         private void Align1_Click(object sender, RoutedEventArgs e)
         {
-            Plan.Align1.AB = ScreenPoint2GridPoint(new NpPoint(lastMouseRightX, lastMouseRightY));
+            Plan.Align1.AB = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
             grid1.InvalidateVisual();
         }
 
         private void Align2_Click(object sender, RoutedEventArgs e)
         {
-            Plan.Align2.AB = ScreenPoint2GridPoint(new NpPoint(lastMouseRightX, lastMouseRightY));
+            Plan.Align2.AB = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
             grid1.InvalidateVisual();
         }
 
         private void Origin_Click(object sender, RoutedEventArgs e)
         {
-            Plan.Origin.XY = new NpPoint(0, 0);
-            Plan.Origin.AB = ScreenPoint2GridPoint(new NpPoint(lastMouseRightX, lastMouseRightY));
+            Plan.Origin.XY = new Point(0, 0);
+            Plan.Origin.AB = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
             grid1.InvalidateVisual();
         }
 
@@ -156,7 +185,11 @@ namespace csNavplan
         private void grid1_MouseMove(object sender, MouseEventArgs e)
         {
             var p = e.GetPosition(grid1);
-            MouseLocal = $"Local ({p.X / grid1.ActualWidth:F}, {p.Y / grid1.ActualHeight:F})";
+            var MousePct = new Point(p.X / grid1.ActualWidth, p.Y / grid1.ActualHeight);
+            MouseUtm = Plan.Pct2Utm(MousePct);
+            MouseGps = Utm.ToLonLat(MouseUtm.X, MouseUtm.Y, "10");    // +++hardcoded zone!!!
+
+            MouseLocal = Plan.Screen2Local(p);
         }
 
         private void Clear_Click(object sender, RoutedEventArgs e)
@@ -167,37 +200,15 @@ namespace csNavplan
 
         private void Refresh_Click(object sender, RoutedEventArgs e)
         {
-            grid1.InvalidateVisual();
+            Refresh();
         }
 
-        // eg; https://maps.googleapis.com/maps/api/staticmap?center=40.714728,-73.998672&zoom=12&size=400x400&maptype=satellite&key=API_KEY
-
-        async private void Google_Click(object sender, RoutedEventArgs e)
+        void Refresh()
         {
-            //float x = 40.714728F, y = -73.998672F;
-            // robo magellan
-            float x = 47.6204389F, y = -122.3510633F;            
-            float zoom = 19.0F;
-            string u = "https://maps.googleapis.com/maps/api/staticmap?maptype=satellite&" +
-                $"center={x},{y}&" +
-                $"size={(int)grid1.ActualWidth}x{(int)grid1.ActualHeight}&" +
-                $"zoom={zoom}&" + 
-                $"key={API_KEY}";
-
-            using (var client = new HttpClient())
-            {
-                var response = await client.GetStreamAsync(u);
-                GridImage = new BitmapImage();
-                GridImage.BeginInit();
-                GridImage.CacheOption = BitmapCacheOption.OnLoad;
-                GridImage.StreamSource = response;
-                grid1.Background = new ImageBrush { ImageSource = GridImage };
-                GridImage.EndInit();
-            }
-
-            // +++ what aligns do I know at this point?
-            // I know center AB(50,50) is center_GPS (x/y above) but that is about it
-            // I think heading 0 is y axis
+            grid1.InvalidateVisual();
+            var a = Plan.Align1.UtmCoord.X - Plan.Align2.UtmCoord.X;
+            var b = Plan.Align1.UtmCoord.Y - Plan.Align2.UtmCoord.Y;
+            AlignUtmDistance = Math.Sqrt((a * a) + (b * b));
         }
 
         void Save_Click(object sender, RoutedEventArgs e)
@@ -230,11 +241,40 @@ namespace csNavplan
             {
                 JpegBitmapEncoder encoder = new JpegBitmapEncoder();
                 encoder.Frames.Add(BitmapFrame.Create(GridImage));
-                using (var filestream = new FileStream(d.FileName, FileMode.Create))
+                using (var filestream = new FileStream(d.FileName, FileMode.OpenOrCreate))
                     encoder.Save(filestream);
                 Plan.ImageFileName = d.FileName;    // so it will load next time
             }
         }
+
+        async private void Google_Click(object sender, RoutedEventArgs e)
+        {           
+            string u = "https://maps.googleapis.com/maps/api/staticmap?maptype=satellite&" +
+                $"center={Plan.ImageData.GpsCoord.X},{Plan.ImageData.GpsCoord.Y}&" +
+                $"size={(int)grid1.ActualWidth}x{(int)grid1.ActualHeight}&" +
+                $"zoom={(int)Plan.ImageData.XY.X}&" +
+                $"key={API_KEY}";
+
+            using (var client = new HttpClient())
+            {
+                var response = await client.GetStreamAsync(u);
+                GridImage = new BitmapImage();
+                GridImage.BeginInit();
+                GridImage.CacheOption = BitmapCacheOption.OnLoad;
+                GridImage.StreamSource = response;
+                grid1.Background = new ImageBrush { ImageSource = GridImage };
+                GridImage.EndInit();
+            }
+
+            // +++ what aligns do I know at this point?
+            // I know center AB(50,50) is center_GPS (x/y above) but that is about it
+            // I think heading 0 is y axis
+            // I think zoom and target W/H will give me a clue as to scale?
+
+            // https://groups.google.com/forum/#!topic/google-maps-js-api-v3/hDRO4oHVSeM
+            //double MetersPerPixel = 156543.03392 * Math.Cos(latLng.lat() * Math.PI / 180) / Math.Pow(2, zoom)
+        }
+        
 
         private void grid1_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
         {
