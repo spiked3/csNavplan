@@ -19,14 +19,12 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Xceed.Wpf.Toolkit.PropertyGrid.Attributes;
+using System.Windows.Controls.Primitives;
 
-// google static maps API key AIzaSyAik-F33VKp4evJfuwDD_YTmh38bBZRcOw
 namespace csNavplan
 {
     public partial class MainWindow : Window
     {
-        static readonly string API_KEY = "AIzaSyAik-F33VKp4evJfuwDD_YTmh38bBZRcOw";
-
         public double AlignUtmDistance
         {
             get { return (double)GetValue(AlignUtmDistanceProperty); }
@@ -34,14 +32,6 @@ namespace csNavplan
         }
         public static readonly DependencyProperty AlignUtmDistanceProperty =
             DependencyProperty.Register("AlignUtmDistance", typeof(double), typeof(MainWindow));
-
-        public BitmapImage GridImage
-        {
-            get { return (BitmapImage)GetValue(GridImageProperty); }
-            set { SetValue(GridImageProperty, value); }
-        }
-        public static readonly DependencyProperty GridImageProperty =
-            DependencyProperty.Register("GridImage", typeof(BitmapImage), typeof(MainWindow));
 
         public string Filename
         {
@@ -54,7 +44,7 @@ namespace csNavplan
         public Plan Plan
         {
             get { return (Plan)GetValue(PlanProperty); }
-            set { SetValue(PlanProperty, value); Refresh(); }
+            set { value?.OnAlignmentPointChanged(); SetValue(PlanProperty, value); }
         }
         public static readonly DependencyProperty PlanProperty =
             DependencyProperty.Register("Plan", typeof(Plan), typeof(MainWindow));
@@ -99,32 +89,18 @@ namespace csNavplan
         public static readonly DependencyProperty PropertyGridObjectProperty =
             DependencyProperty.Register("PropertyGridObject", typeof(Object), typeof(MainWindow));
 
-        public int GridDivisions
-        {
-            get { return (int)GetValue(GridDivisionsProperty); }
-            set { SetValue(GridDivisionsProperty, value); }
-        }
-        public static readonly DependencyProperty GridDivisionsProperty =
-            DependencyProperty.Register("GridDivisions", typeof(int), typeof(MainWindow), new PropertyMetadata(10));
+        static TextBlock _statusBarTextBlock;
+        public static string Status {  set { _statusBarTextBlock.Text = value; } }
 
         public MainWindow()
         {
             InitializeComponent();
+            _statusBarTextBlock = StatusBarTextBlock;
         }
 
         public Point ScreenPoint2Pct(Point a)
         {
             return new Point(a.X / grid1.ActualWidth, a.Y / grid1.ActualHeight);
-        }
-
-        private void ImportImage_Click(object sender, RoutedEventArgs e)
-        {
-            OpenFileDialog d = new OpenFileDialog { Filter = "Image Files|*.bmp;*.jpg;*.jpeg;*.png;*.gif|All Files|*.*" };
-            if (d.ShowDialog() ?? false)
-            {
-                GridImageBrush = new ImageBrush { ImageSource = new BitmapImage(new Uri(d.FileName)) };
-                Plan.ImageFileName = d.FileName;
-            }
         }
 
         private void Window_Closing(object sender, CancelEventArgs e)
@@ -141,35 +117,35 @@ namespace csNavplan
             Height = Settings1.Default.Height;
             if (Width < 20) Width = 640;
             if (Height < 20) Height = 480;
+
             Plan = JsonConvert.DeserializeObject<Plan>(Settings1.Default.Plan);
+
             if (Plan == null)
                 Plan = new Plan();
-            if (Plan.ImageFileName?.Length > 0)
-                GridImageBrush = new ImageBrush { ImageSource = new BitmapImage(new Uri(Plan.ImageFileName)) };
-            else
-                GridImageBrush = new SolidColorBrush(Colors.Beige);
-            Plan.AlignmentPointChanged += Plan_AlignmentPointChanged;
+
+            Plan.AlignmentChanged += Plan_AlignmentChanged;
+            Plan.OnAlignmentPointChanged(); // cause recalc
+            grid1.InvalidateVisual();
         }
 
-        private void Plan_AlignmentPointChanged(object sender, EventArgs e)
+        private void Plan_AlignmentChanged(object sender, EventArgs e)
         {
-            
-        }
-
-        private void Exit_Click(object sender, RoutedEventArgs e)
-        {
-            Close();
+            var a = Plan.Align1.UtmCoord.X - Plan.Align2.UtmCoord.X;
+            var b = Plan.Align1.UtmCoord.Y - Plan.Align2.UtmCoord.Y;
+            AlignUtmDistance = Math.Sqrt((a * a) + (b * b));
         }
 
         private void Align1_Click(object sender, RoutedEventArgs e)
         {
             Plan.Align1.AB = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
+            Plan.OnAlignmentPointChanged();
             grid1.InvalidateVisual();
         }
 
         private void Align2_Click(object sender, RoutedEventArgs e)
         {
             Plan.Align2.AB = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
+            Plan.OnAlignmentPointChanged();
             grid1.InvalidateVisual();
         }
 
@@ -177,38 +153,41 @@ namespace csNavplan
         {
             Plan.Origin.XY = new Point(0, 0);
             Plan.Origin.AB = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
+            Plan.Origin.UtmCoord = Plan.Pct2Utm(Plan.Origin.AB);
+            Plan.Origin.GpsCoord = Utm.ToLonLat(Plan.Origin.UtmCoord.X, Plan.Origin.UtmCoord.Y, "10");
+            Plan.OnAlignmentPointChanged();
             grid1.InvalidateVisual();
         }
 
         double lastMouseRightX, lastMouseRightY;
+
+        private void grid1_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            var p = e.GetPosition(grid1);
+            lastMouseRightX = p.X;
+            lastMouseRightY = p.Y;
+        }
 
         private void grid1_MouseMove(object sender, MouseEventArgs e)
         {
             var p = e.GetPosition(grid1);
             var MousePct = new Point(p.X / grid1.ActualWidth, p.Y / grid1.ActualHeight);
             MouseUtm = Plan.Pct2Utm(MousePct);
+            MouseLocal = Plan.Utm2Local(MouseUtm);
             MouseGps = Utm.ToLonLat(MouseUtm.X, MouseUtm.Y, "10");    // +++hardcoded zone!!!
+        }
 
-            MouseLocal = Plan.Screen2Local(p);
+        private void Exit_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
         }
 
         private void Clear_Click(object sender, RoutedEventArgs e)
         {
-            GridImageBrush = new SolidColorBrush(Colors.Beige);
             Plan.ImageFileName = "";
-        }
-
-        private void Refresh_Click(object sender, RoutedEventArgs e)
-        {
-            Refresh();
-        }
-
-        void Refresh()
-        {
+            Plan.ImageData.GpsCoord = new Point(0, 0);
+            Plan.BackgroundBrush = null;
             grid1.InvalidateVisual();
-            var a = Plan.Align1.UtmCoord.X - Plan.Align2.UtmCoord.X;
-            var b = Plan.Align1.UtmCoord.Y - Plan.Align2.UtmCoord.Y;
-            AlignUtmDistance = Math.Sqrt((a * a) + (b * b));
         }
 
         void Save_Click(object sender, RoutedEventArgs e)
@@ -221,6 +200,7 @@ namespace csNavplan
 
         void SaveAs_Click(object sender, RoutedEventArgs e)
         {
+            throw new NotImplementedException();
             SaveFileDialog d = new SaveFileDialog { Filter = "XML Files|*.xml|All Files|*.*", DefaultExt = "xml" };
             if (d.ShowDialog() ?? false)
             {
@@ -229,58 +209,31 @@ namespace csNavplan
             }
         }
 
-        private void Color_Click(object sender, RoutedEventArgs e)
+        private void Google_Click(object sender, RoutedEventArgs e)
         {
-            new ColorsDlg().Show();
+            Plan.BackgroundBrush = null;
+            Plan.ImageFileName = "";
+            grid1.InvalidateVisual();
+        }
+
+        private void ImportImage_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog d = new OpenFileDialog { Filter = "Image Files|*.bmp;*.jpg;*.jpeg;*.png;*.gif|All Files|*.*" };
+            if (d.ShowDialog() ?? false)
+                Plan.ImageFileName = d.FileName;                
+            grid1.InvalidateVisual();
         }
 
         private void SaveImage_Click(object sender, RoutedEventArgs e)
         {
             SaveFileDialog d = new SaveFileDialog { Filter = "JPG Files|*.jpg", DefaultExt = "jpg" };
             if (d.ShowDialog() ?? false)
-            {
-                JpegBitmapEncoder encoder = new JpegBitmapEncoder();
-                encoder.Frames.Add(BitmapFrame.Create(GridImage));
-                using (var filestream = new FileStream(d.FileName, FileMode.OpenOrCreate))
-                    encoder.Save(filestream);
-                Plan.ImageFileName = d.FileName;    // so it will load next time
-            }
+                Plan.SaveImage(d.FileName);
         }
 
-        async private void Google_Click(object sender, RoutedEventArgs e)
-        {           
-            string u = "https://maps.googleapis.com/maps/api/staticmap?maptype=satellite&" +
-                $"center={Plan.ImageData.GpsCoord.X},{Plan.ImageData.GpsCoord.Y}&" +
-                $"size={(int)grid1.ActualWidth}x{(int)grid1.ActualHeight}&" +
-                $"zoom={(int)Plan.ImageData.XY.X}&" +
-                $"key={API_KEY}";
-
-            using (var client = new HttpClient())
-            {
-                var response = await client.GetStreamAsync(u);
-                GridImage = new BitmapImage();
-                GridImage.BeginInit();
-                GridImage.CacheOption = BitmapCacheOption.OnLoad;
-                GridImage.StreamSource = response;
-                grid1.Background = new ImageBrush { ImageSource = GridImage };
-                GridImage.EndInit();
-            }
-
-            // +++ what aligns do I know at this point?
-            // I know center AB(50,50) is center_GPS (x/y above) but that is about it
-            // I think heading 0 is y axis
-            // I think zoom and target W/H will give me a clue as to scale?
-
-            // https://groups.google.com/forum/#!topic/google-maps-js-api-v3/hDRO4oHVSeM
-            //double MetersPerPixel = 156543.03392 * Math.Cos(latLng.lat() * Math.PI / 180) / Math.Pow(2, zoom)
-        }
-        
-
-        private void grid1_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        private void Color_Click(object sender, RoutedEventArgs e)
         {
-            var p = e.GetPosition(grid1);
-            lastMouseRightX = p.X;
-            lastMouseRightY = p.Y;
+            new ColorsDlg().Show();
         }
     }
 }

@@ -15,19 +15,33 @@ namespace csNavplan
     {
         static double markerRadius = 5.0;
 
-        public int GridDivisions
+        public Brush Foreground
         {
-            get { return (int)GetValue(GridDivisionsProperty); }
-            set { SetValue(GridDivisionsProperty, value); }
+            get { return (Brush)GetValue(ForegroundProperty); }
+            set { SetValue(ForegroundProperty, value); }
         }
-        public static readonly DependencyProperty GridDivisionsProperty =
-            DependencyProperty.Register("GridDivisions", typeof(int), typeof(PlanCanvas), new PropertyMetadata(10));
+        public static readonly DependencyProperty ForegroundProperty =
+            DependencyProperty.Register("Foreground", typeof(Brush), typeof(PlanCanvas), new PropertyMetadata(new SolidColorBrush(Colors.Black)));
 
-        static Pen gridPen = new Pen(Brushes.Gray, 1.0);
+        public Brush AlignPointBrush
+        {
+            get { return (Brush)GetValue(AlignPointBrushProperty); }
+            set { SetValue(AlignPointBrushProperty, value); }
+        }
+        public static readonly DependencyProperty AlignPointBrushProperty =
+            DependencyProperty.Register("AlignPointBrush", typeof(Brush), typeof(PlanCanvas), new PropertyMetadata(new SolidColorBrush(Colors.Yellow)));
+
+        public Typeface Typeface
+        {
+            get { return (Typeface)GetValue(TypefaceProperty); }
+            set { SetValue(TypefaceProperty, value); }
+        }
+        public static readonly DependencyProperty TypefaceProperty =
+            DependencyProperty.Register("Typeface", typeof(Typeface), typeof(PlanCanvas), new PropertyMetadata(new Typeface("Arial")));
+
         static Brush originBrush = Brushes.White;
         static Brush alignBrush = Brushes.Cyan;
 
-        Typeface NpTypeface = new Typeface("Arial");
         double NpEmSize = 10.0;
         Brush NpBrush = new SolidColorBrush(Colors.Magenta);
 
@@ -38,41 +52,36 @@ namespace csNavplan
 
         protected override void OnRender(DrawingContext dc)
         {
-            FormattedText ft;
-            Point tp;
+            if (DesignerProperties.GetIsInDesignMode(this)) return;
 
             base.OnRender(dc);
-
-            if (DesignerProperties.GetIsInDesignMode(this)) return;
 
             Plan plan = (DataContext as MainWindow).Plan;
             if (plan == null) return;
 
-            for (double x = 0, y = 0; x < ActualWidth; x += ActualWidth / GridDivisions, y += ActualHeight / GridDivisions)
-            {
-                dc.DrawLine(gridPen, new Point(x, 0), new Point(x, ActualHeight));
-                dc.DrawLine(gridPen, new Point(0, y), new Point(ActualWidth, y));
-            }
+            plan.RenderBackground(dc, this);
 
-            Point o = Pct2CanvasPoint(plan.Origin.AB);
-            dc.DrawEllipse(alignBrush, null, (Point)o, markerRadius, markerRadius);
-            ft = new FormattedText($"({plan.Origin.XY.X:F2}, {plan.Origin.XY.Y:F2})", Thread.CurrentThread.CurrentUICulture, 
-                FlowDirection.LeftToRight, NpTypeface, NpEmSize, NpBrush);
-            tp = new Point(o.X - (ft.Width/2) , o.Y + (markerRadius/2) + 1);
+            DrawPoint(dc, plan.Origin, AlignPointBrush, Foreground);
+            DrawPoint(dc, plan.Align1, AlignPointBrush, Foreground);
+            DrawPoint(dc, plan.Align2, AlignPointBrush, Foreground);
+        }
+
+        void DrawPoint(DrawingContext dc, PlanPoint pp, Brush elipseBrush, Brush labelBrush)
+        {
+            // AB is the pctg point, XY is the local Coordinates
+            FormattedText ft;
+            Point tp, p = Pct2CanvasPoint(pp.AB);    
+
+            dc.DrawEllipse(elipseBrush, null, p, markerRadius, markerRadius);
+
+            ft = new FormattedText($"{pp.PointName}", Thread.CurrentThread.CurrentUICulture,
+                FlowDirection.LeftToRight, Typeface, NpEmSize, labelBrush);
+            tp = new Point(p.X - (ft.Width / 2), p.Y + (markerRadius / 2) + 1);
             dc.DrawText(ft, tp);
 
-            Point a1 = Pct2CanvasPoint(plan.Align1.AB);
-            dc.DrawEllipse(alignBrush, null, (Point)a1, markerRadius, markerRadius);
-            ft = new FormattedText($"({plan.Align1.XY.X:F2}, {plan.Align1.XY.Y:F2})", Thread.CurrentThread.CurrentUICulture,
-                FlowDirection.LeftToRight, NpTypeface, NpEmSize, NpBrush);
-            tp = new Point(a1.X - (ft.Width / 2), a1.Y + (markerRadius / 2) + 1);
-            dc.DrawText(ft, tp);
-
-            Point a2 = Pct2CanvasPoint(plan.Align2.AB);
-            dc.DrawEllipse(alignBrush, null, (Point)a2, markerRadius, markerRadius);
-            ft = new FormattedText($"({plan.Align2.XY.X:F2}, {plan.Align2.XY.Y:F2})", Thread.CurrentThread.CurrentUICulture,
-                FlowDirection.LeftToRight, NpTypeface, NpEmSize, NpBrush);
-            tp = new Point(a2.X - (ft.Width / 2), a2.Y + (markerRadius / 2) + 1);
+            ft = new FormattedText($"({pp.XY.X:F2}, {pp.XY.Y:F2})", Thread.CurrentThread.CurrentUICulture,
+                FlowDirection.LeftToRight, Typeface, NpEmSize, labelBrush);
+            tp = new Point(p.X - (ft.Width / 2), ft.Height + p.Y + (markerRadius / 2) + 1);
             dc.DrawText(ft, tp);
         }
     }
