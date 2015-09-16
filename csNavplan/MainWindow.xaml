@@ -7,59 +7,76 @@
         xmlns:xtk="http://schemas.xceed.com/wpf/xaml/toolkit"        
         mc:Ignorable="d"
         Title="csNavPlan - spiked3.com"
-        DataContext="{Binding RelativeSource={RelativeSource Self}}" Closing="Window_Closing" Loaded="Window_Loaded" >
+        DataContext="{Binding RelativeSource={RelativeSource Self}}" Closing="Window_Closing" Loaded="Window_Loaded" d:DesignWidth="1046" d:DesignHeight="857" >
 
     <DockPanel LastChildFill="True">
+
         <Menu DockPanel.Dock="Top" Margin="2" >
             <MenuItem Header="_File" >
-                <MenuItem Header="_Clear" Click="Clear_Click"  />
-                <MenuItem Header="_Save" Click="Save_Click" ContextMenuClosing="SaveAs_Click" />
-                <MenuItem Header="S_ave as ...." />
                 <MenuItem Header="_New" />
+                <MenuItem Header="_Save" Click="Save_Click" ContextMenuClosing="SaveAs_Click" />
+                <MenuItem Header="Save _as ...." />
+                <Separator />
+                <MenuItem Header="_Clear Image" Click="Clear_Click"  />
                 <MenuItem Header="_Import Image ..." Click="ImportImage_Click" />
                 <MenuItem Header="Sa_ve Image ..." Click="SaveImage_Click" />
+                <MenuItem Header="Color ..." Click="Color_Click" />
                 <Separator />
                 <MenuItem Header="E_xit" Click="Exit_Click" />
             </MenuItem>
-            <MenuItem Header="Color ..." Click="Color_Click" />
         </Menu>
+
         <StatusBar DockPanel.Dock="Bottom" >
             <StatusBarItem >
                 <StackPanel Orientation="Horizontal" >
-                    <TextBlock Text="Mouse LocalXY" Margin="2,0,4,0"/>
-                    <TextBlock Text="{Binding MouseLocal,StringFormat={}{0:F5}}" />
+                    <TextBlock Text="Mouse XY" Margin="2,0,4,0"/>
+                    <TextBlock Text="{Binding MouseXY,StringFormat={}{0:F0}}" />
+                </StackPanel>
+            </StatusBarItem>
+            <StatusBarItem >
+                <StackPanel Orientation="Horizontal" >
+                    <TextBlock Text="Pct" Margin="2,0,4,0"/>
+                    <TextBlock Text="{Binding MousePct,StringFormat={}{0:F2}}" />
+                </StackPanel>
+            </StatusBarItem>
+            <StatusBarItem >
+                <StackPanel Orientation="Horizontal" >
+                    <TextBlock Text="Local" Margin="2,0,4,0"/>
+                    <TextBlock Text="{Binding MouseLocal,StringFormat={}{0:F6}}" />
                 </StackPanel>
             </StatusBarItem>
             <StatusBarItem >
                 <StackPanel Orientation="Horizontal" >
                     <TextBlock Text="Utm" Margin="8,0,4,0"/>
-                    <TextBlock Text="{Binding MouseUtm,StringFormat={}{0:F5}}" />
+                    <TextBlock Text="{Binding MouseUtm,StringFormat={}{0:F6}}" />
                 </StackPanel>
             </StatusBarItem>
             <StatusBarItem >
                 <StackPanel Orientation="Horizontal" >
                     <TextBlock Text="Gps" Margin="8,0,4,0" />
-                    <TextBlock Text="{Binding MouseGps,StringFormat={}{0:F5}}" />
+                    <TextBlock Text="{Binding MouseGps,StringFormat={}{0:F6}}" />
                 </StackPanel>
             </StatusBarItem>
             <Separator />
             <StatusBarItem >
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="Distance between Align Points " />
-                    <TextBlock Text="{Binding AlignUtmDistance,StringFormat={}{0:F5}}" />
+                    <TextBlock Text="{Binding AlignUtmDistance,StringFormat={}{0:F3}}" />
                 </StackPanel>
             </StatusBarItem>
             <StatusBarItem HorizontalAlignment="Right" >
                 <TextBlock x:Name="StatusBarTextBlock" />
             </StatusBarItem>
         </StatusBar>
-        <StackPanel Orientation="Vertical" DockPanel.Dock="Right">
+
+        <StackPanel Orientation="Vertical" DockPanel.Dock="Right" Width="Auto">
             <!--<xtk:PropertyGrid SelectedObject="{Binding Plan}" ShowSearchBox="False" ShowSummary="False" ShowSortOptions="False" />-->
             <local:AlignPoint DataContext="{Binding Plan.ImageData}" Height="Auto" Width="Auto" />
             <Button Content="Google" Width="75" Click="Google_Click" Margin="4" />
-            <local:AlignPoint DataContext="{Binding Plan.Align1}" Height="Auto" Width="Auto" />
-            <local:AlignPoint DataContext="{Binding Plan.Align2}" Height="Auto" Width="Auto" />
-            <local:AlignPoint DataContext="{Binding Plan.Origin}" Height="Auto" Width="Auto" />
+            <local:AlignPoint DataContext="{Binding Plan.Align1}" />
+            <local:AlignPoint DataContext="{Binding Plan.Align2}" />
+            <local:AlignPoint DataContext="{Binding Plan.Origin}" />
+            <local:WayPointCRUD DataContext="{Binding Plan.Waypoints}" />
         </StackPanel>
 
         <local:PlanCanvas x:Name="grid1" Background="WhiteSmoke"

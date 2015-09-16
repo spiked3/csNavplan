@@ -1,25 +1,11 @@
 ﻿using Microsoft.Win32;
 using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using Xceed.Wpf.Toolkit.PropertyGrid.Attributes;
-using System.Windows.Controls.Primitives;
 
 namespace csNavplan
 {
@@ -73,6 +59,22 @@ namespace csNavplan
         public static readonly DependencyProperty MouseLocalProperty =
             DependencyProperty.Register("MouseLocal", typeof(Point), typeof(MainWindow), new PropertyMetadata(new Point(0,0)));
 
+        public Point MouseXY
+        {
+            get { return (Point)GetValue(MouseXYProperty); }
+            set { SetValue(MouseXYProperty, value); }
+        }
+        public static readonly DependencyProperty MouseXYProperty =
+            DependencyProperty.Register("MouseXY", typeof(Point), typeof(MainWindow), new PropertyMetadata(new Point(0,0)));
+
+        public Point MousePct
+        {
+            get { return (Point)GetValue(MousePctProperty); }
+            set { SetValue(MousePctProperty, value); }
+        }
+        public static readonly DependencyProperty MousePctProperty =
+            DependencyProperty.Register("MousePct", typeof(Point), typeof(MainWindow), new PropertyMetadata(new Point(0,0)));
+
         public Brush GridImageBrush
         {
             get { return (Brush)GetValue(GridImageBrushProperty); }
@@ -91,6 +93,8 @@ namespace csNavplan
 
         static TextBlock _statusBarTextBlock;
         public static string Status {  set { _statusBarTextBlock.Text = value; } }
+
+        double lastMouseRightX, lastMouseRightY;
 
         public MainWindow()
         {
@@ -122,6 +126,18 @@ namespace csNavplan
 
             if (Plan == null)
                 Plan = new Plan();
+
+            // todo stub
+            if (Plan.Waypoints.Count == 0)
+            {
+                Random r = new Random();
+                for (var i = 0; i < 24; i++)
+                {
+                    var w = new Waypoint();
+                    w.XY = new Point(r.Next(), r.Next());
+                    Plan.Waypoints.Add(w);
+                }
+            }
 
             Plan.AlignmentChanged += Plan_AlignmentChanged;
             Plan.OnAlignmentPointChanged(); // cause recalc
@@ -159,8 +175,6 @@ namespace csNavplan
             grid1.InvalidateVisual();
         }
 
-        double lastMouseRightX, lastMouseRightY;
-
         private void grid1_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
         {
             var p = e.GetPosition(grid1);
@@ -171,10 +185,11 @@ namespace csNavplan
         private void grid1_MouseMove(object sender, MouseEventArgs e)
         {
             var p = e.GetPosition(grid1);
-            var MousePct = new Point(p.X / grid1.ActualWidth, p.Y / grid1.ActualHeight);
+            MousePct = new Point(p.X / grid1.ActualWidth, p.Y / grid1.ActualHeight);
+            MouseXY = p;            
             MouseUtm = Plan.Pct2Utm(MousePct);
             MouseLocal = Plan.Utm2Local(MouseUtm);
-            MouseGps = Utm.ToLonLat(MouseUtm.X, MouseUtm.Y, "10");    // +++hardcoded zone!!!
+            MouseGps = Utm.ToLonLat(MouseUtm.X, MouseUtm.Y, "10");    // hack hardcoded zone!!!
         }
 
         private void Exit_Click(object sender, RoutedEventArgs e)
@@ -195,18 +210,14 @@ namespace csNavplan
             if (string.IsNullOrEmpty(Filename))
                 SaveAs_Click(sender, e);
             else
-                /* NavPlan.Save() */ ;
+                Plan.Save();
         }
 
         void SaveAs_Click(object sender, RoutedEventArgs e)
         {
-            throw new NotImplementedException();
             SaveFileDialog d = new SaveFileDialog { Filter = "XML Files|*.xml|All Files|*.*", DefaultExt = "xml" };
             if (d.ShowDialog() ?? false)
-            {
-                //NavPlan.Filename = d.FileName;
-                //NavPlan.Save();
-            }
+                Plan.SaveAs(d.FileName);
         }
 
         private void Google_Click(object sender, RoutedEventArgs e)

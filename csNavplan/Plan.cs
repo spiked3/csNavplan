@@ -1,16 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
-using System.Linq;
-using System.Net.Http;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Xml.Serialization;
 using Newtonsoft.Json;
 
 namespace csNavplan
@@ -45,24 +39,27 @@ namespace csNavplan
         public PlanPoint Origin { get { return _Origin; } set { _Origin = value; OnPropertyChanged(); OnAlignmentPointChanged(); } }
         PlanPoint _Origin = new PlanPoint { AB = new Point(50, 50), XY = new Point(0, 0), PointName = "Origin" };   // default middle
 
+        public WaypointCollection Waypoints { get { return _Waypoints; } set { _Waypoints = value; OnPropertyChanged(); } }
+        WaypointCollection _Waypoints = new WaypointCollection(); 
+
         public event EventHandler AlignmentChanged;
 
-        // values for calculating local cordinates from UTM
-        double horizontalProportion, verticalProportion;
-
         static Pen gridPen = new Pen(Brushes.Gray, 1.0);
-        public int GridDivisions = 10;      // todo 
 
         [JsonIgnore]
         public Brush BackgroundBrush;
 
+        [JsonIgnore]
+        public Rect ImageUtmRect;
+
         string LastGoogleMapUri;        // hack
+        public int GridDivisions = 10;      // todo 
 
         public void SaveImage(string filename)
         {
             JpegBitmapEncoder encoder = new JpegBitmapEncoder();
 
-            encoder.Frames.Add(BitmapFrame.Create(new Uri(LastGoogleMapUri)));
+            encoder.Frames.Add(BitmapFrame.Create(new Uri(LastGoogleMapUri)));  // hack
 
             using (var filestream = new FileStream(filename, FileMode.OpenOrCreate))
                 encoder.Save(filestream);
@@ -71,14 +68,12 @@ namespace csNavplan
 
         public Point Pct2Utm(Point a)
         {
-            return new Point(0, 0); // todo
-            //return new Point(horizontalOffset + a.X * horizontalProportion, verticalOffset + a.Y * verticalProportion);
+            return new Point(ImageUtmRect.X + a.X  * ImageUtmRect.Width, ImageUtmRect.Y + a.Y * ImageUtmRect.Height);
         }
 
-        internal Point Utm2Local(Point mouseUtm)
+        internal Point Utm2Local(Point utm)
         {
-            return new Point(0, 0); // todo
-            //return new Point(mouseUtm.X - horizontalOffset, mouseUtm.Y - verticalOffset);
+            return new Point(utm.X - Origin.UtmCoord.X, utm.Y - Origin.UtmCoord.Y);
         }
 
         public Point Pct2Local(Point a)
@@ -88,12 +83,19 @@ namespace csNavplan
 
         public void OnAlignmentPointChanged()
         {
-            // calculate new proportions - pctg diff / utm diff
-            horizontalProportion = Math.Abs(Align2.AB.X - Align1.AB.X) / Math.Abs(Align2.UtmCoord.X - Align1.UtmCoord.X);
-            verticalProportion = (Align1.AB.Y - Align2.AB.Y) / (Align1.UtmCoord.Y - Align2.UtmCoord.Y);
+            Utm middleUtm = new Utm(ImageData.GpsCoord.X, ImageData.GpsCoord.X);
 
-            // new offsets
-            // TODO use map() funtion with tgt size
+            // calculate new proportions - pctg diff / utm diff
+            double horizontalProportion = Math.Abs(Align2.AB.X - Align1.AB.X) / Math.Abs(Align2.UtmCoord.X - Align1.UtmCoord.X);
+            double verticalProportion = (Align1.AB.Y - Align2.AB.Y) / (Align1.UtmCoord.Y - Align2.UtmCoord.Y);
+
+            double imgWidthMeters = ImageData.AB.X * horizontalProportion;
+            double imgHeightMeters = ImageData.AB.Y * verticalProportion;
+
+            var left = middleUtm.Easting - imgWidthMeters / 2;
+            var top = middleUtm.Northing - imgHeightMeters / 2;
+
+            ImageUtmRect = new Rect(left, top, left + imgWidthMeters, top + imgHeightMeters);
 
             if (AlignmentChanged != null)
                 AlignmentChanged(this, EventArgs.Empty);
@@ -141,6 +143,21 @@ namespace csNavplan
                 dc.DrawLine(gridPen, new Point(x, 0), new Point(x, pc.ActualHeight));
                 dc.DrawLine(gridPen, new Point(0, y), new Point(pc.ActualWidth, y));
             }
+         }
+
+        #region LoadSave_Notimplemented
+        public void Save()
+        {
+            throw new NotImplementedException();
         }
+        public void SaveAs(string fileName)
+        {
+            throw new NotImplementedException();
+        }
+        public static Plan Load(string fileName)
+        {
+            throw new NotImplementedException();
+        }
+#endregion
     }
 }

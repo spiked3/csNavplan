@@ -16,9 +16,6 @@ using System.Windows.Threading;
 
 namespace csNavplan
 {
-    /// <summary>
-    /// Interaction logic for AlignPoint.xaml
-    /// </summary>
     public partial class AlignPoint : UserControl
     {
         public AlignPoint()
