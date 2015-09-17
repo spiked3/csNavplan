@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Media;
@@ -106,16 +107,15 @@ namespace csNavplan
             // draw image, fetch from google if it has not been already fetched
             if (BackgroundBrush == null)
             {
+                ImageData.AB = new Point(pc.ActualWidth, pc.ActualHeight);
                 if (ImageFileName?.Length > 0)
                 {
                     BackgroundBrush = new ImageBrush(new BitmapImage(new Uri(ImageFileName)));
-                    ImageData.AB = new Point(pc.ActualWidth, pc.ActualHeight);
                     MainWindow.Status = "Loaded local Image for background";
                 }
                 else if (ImageData.GpsCoord.X + ImageData.GpsCoord.X > 0)
                 {
                     int zoom = 19; // todo I hate maps
-                    ImageData.AB = new Point(pc.ActualWidth, pc.ActualHeight);
                     ImageFileName = ""; // indicates we did not load an image from disk
 
                     // https://groups.google.com/forum/#!topic/google-maps-js-api-v3/hDRO4oHVSeM
@@ -130,8 +130,8 @@ namespace csNavplan
                 }
                 else
                 {
-                    ImageData.AB = new Point(pc.ActualWidth, pc.ActualHeight);
                     BackgroundBrush = new SolidColorBrush(Colors.WhiteSmoke);
+                    MainWindow.Status = "Create empty background brush";
                 }
             }
 
@@ -144,6 +144,12 @@ namespace csNavplan
                 dc.DrawLine(gridPen, new Point(0, y), new Point(pc.ActualWidth, y));
             }
          }
+
+        internal void ResetSequenceNumbers()
+        {
+            for (var i = 0; i < Waypoints.Count; i++)
+                Waypoints[i].Sequence = i+1;
+        }
 
         #region LoadSave_Notimplemented
         public void Save()

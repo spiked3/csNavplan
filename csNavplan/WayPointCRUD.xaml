@@ -19,13 +19,37 @@
                 <Style TargetType="Button" >
                     <Setter Property="Width" Value="46" />
                     <Setter Property="Margin" Value="4" />
-                </Style>            
+                </Style>
             </StackPanel.Resources>
             <!--<Button Content="Create" />-->
-        <Button Content="Up" />
-        <Button Content="Down" />
-        <Button Content="Delete" />
+            <Button Content="Up" />
+            <Button Content="Down" />
+            <Button Content="Delete" />
         </StackPanel>
-            <ListView ItemsSource="{Binding}" ScrollViewer.VerticalScrollBarVisibility="Auto" Grid.Row="2" />
+        <ListView ItemsSource="{Binding}" Grid.Row="2" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto" >
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <DataTemplate.Triggers>
+                        <DataTrigger Binding="{Binding isAction}" Value="True" >
+                            <Setter TargetName="waypoint1" Property="Grid.Background" Value="Pink" />
+                        </DataTrigger>
+                    </DataTemplate.Triggers>
+                    <Grid x:Name="waypoint1" Background="Beige" Width="192" >
+                        <Grid.RowDefinitions >
+                            <RowDefinition />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions >
+                            <ColumnDefinition />
+                            <ColumnDefinition />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{Binding Sequence}" />
+                        <TextBlock Text="{Binding isActionString}" Grid.Column="1" />
+                        <TextBlock Text="{Binding XY,StringFormat={}{0:F3}}" Grid.Row="1" Grid.ColumnSpan="2" />
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+
+        </ListView>
     </Grid>
 </UserControl>

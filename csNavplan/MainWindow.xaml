@@ -70,17 +70,20 @@
         </StatusBar>
 
         <StackPanel Orientation="Vertical" DockPanel.Dock="Right" Width="Auto">
-            <!--<xtk:PropertyGrid SelectedObject="{Binding Plan}" ShowSearchBox="False" ShowSummary="False" ShowSortOptions="False" />-->
-            <local:AlignPoint DataContext="{Binding Plan.ImageData}" Height="Auto" Width="Auto" />
-            <Button Content="Google" Width="75" Click="Google_Click" Margin="4" />
-            <local:AlignPoint DataContext="{Binding Plan.Align1}" />
-            <local:AlignPoint DataContext="{Binding Plan.Align2}" />
-            <local:AlignPoint DataContext="{Binding Plan.Origin}" />
-            <local:WayPointCRUD DataContext="{Binding Plan.Waypoints}" />
+            <Expander Header="Alignment Points">
+                <StackPanel Orientation="Vertical" Width="Auto">
+                    <local:AlignPoint DataContext="{Binding Plan.ImageData}" Height="Auto" Width="Auto" />
+                    <Button Content="Google" Width="75" Click="Google_Click" Margin="4" />
+                    <local:AlignPoint DataContext="{Binding Plan.Align1}" />
+                    <local:AlignPoint DataContext="{Binding Plan.Align2}" />
+                    <local:AlignPoint DataContext="{Binding Plan.Origin}" />
+                </StackPanel>
+            </Expander>
+            <local:WayPointCRUD DataContext="{Binding Plan.Waypoints}" />    
+            
         </StackPanel>
 
-        <local:PlanCanvas x:Name="grid1" Background="WhiteSmoke"
-                          AlignPointBrush="Yellow" Foreground="White" 
+        <local:PlanCanvas x:Name="grid1" Background="WhiteSmoke" AlignPointBrush="Yellow" Foreground="White" 
                           MouseRightButtonDown="grid1_MouseRightButtonDown" MouseMove="grid1_MouseMove" >
             <local:PlanCanvas.ContextMenu>
                 <ContextMenu>

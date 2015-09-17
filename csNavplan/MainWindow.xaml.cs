@@ -135,9 +135,12 @@ namespace csNavplan
                 {
                     var w = new Waypoint();
                     w.XY = new Point(r.Next(), r.Next());
+                    w.isAction = r.Next(50) < 9;
                     Plan.Waypoints.Add(w);
                 }
+                Plan.Waypoints.Sort(c => c.Sequence);
             }
+            Plan.ResetSequenceNumbers();
 
             Plan.AlignmentChanged += Plan_AlignmentChanged;
             Plan.OnAlignmentPointChanged(); // cause recalc
