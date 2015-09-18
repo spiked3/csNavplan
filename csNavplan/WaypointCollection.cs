@@ -10,14 +10,15 @@ namespace csNavplan
 {
     public class WaypointCollection : SortableObservableCollection<Waypoint>
     {
-
     }
 
-    // todo change isAction bool to wayPointType enum
-    // todo would be nice to set background color based on enum
     public class Waypoint
     {
+        // todo change isAction bool to wayPointType enum
+        // todo would be nice to set background color based on enum
+        // todo should we implement INotifyPropertyChange?
         public int Sequence { get; set; }
+        // XY is actually a image percentage value, it must be converted to a local coordinates 
         public Point XY { get; set; }
         public bool isAction { get; set; }
         public string isActionString { get { return isAction ? "Action" : "";  } }

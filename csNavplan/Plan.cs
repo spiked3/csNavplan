@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using Microsoft.Win32;
 using Newtonsoft.Json;
 
 namespace csNavplan
@@ -25,6 +26,12 @@ namespace csNavplan
         }
 
         #endregion
+
+        public bool IsDirty { get { return _IsDirty; } set { _IsDirty = value; OnPropertyChanged(); } }
+        bool _IsDirty = false; 
+
+        public string PlanFilename { get { return _PlanFilename; } set { _PlanFilename = value; OnPropertyChanged(); } }
+        string _PlanFilename;
 
         public string ImageFileName { get { return _ImageFileName; } set { _ImageFileName = value; OnPropertyChanged(); OnAlignmentPointChanged(); } }
         string _ImageFileName;
@@ -84,19 +91,21 @@ namespace csNavplan
 
         public void OnAlignmentPointChanged()
         {
+            // todo I think this is good
             Utm middleUtm = new Utm(ImageData.GpsCoord.X, ImageData.GpsCoord.X);
 
-            // calculate new proportions - pctg diff / utm diff
-            double horizontalProportion = Math.Abs(Align2.AB.X - Align1.AB.X) / Math.Abs(Align2.UtmCoord.X - Align1.UtmCoord.X);
-            double verticalProportion = (Align1.AB.Y - Align2.AB.Y) / (Align1.UtmCoord.Y - Align2.UtmCoord.Y);
+            double utmDistanceBetweenAlignsX = Math.Abs(Align2.UtmCoord.X - Align1.UtmCoord.X);
+            double pctDistanceBetweenAlignsX = Math.Abs(Align2.AB.X - Align1.AB.X);
+            double utmImageWidthX = 1.0 / pctDistanceBetweenAlignsX * utmDistanceBetweenAlignsX;
 
-            double imgWidthMeters = ImageData.AB.X * horizontalProportion;
-            double imgHeightMeters = ImageData.AB.Y * verticalProportion;
+            double utmDistanceBetweenAlignsY = Math.Abs(Align2.UtmCoord.Y - Align1.UtmCoord.Y);
+            double pctDistanceBetweenAlignsY = Math.Abs(Align2.AB.Y - Align1.AB.Y);
+            double utmImageWidthY = 1.0 / pctDistanceBetweenAlignsY * utmDistanceBetweenAlignsY;
 
-            var left = middleUtm.Easting - imgWidthMeters / 2;
-            var top = middleUtm.Northing - imgHeightMeters / 2;
+            double left = Origin.UtmCoord.X - (Origin.AB.X * utmImageWidthX);
+            double top = Origin.UtmCoord.Y - (Origin.AB.Y * utmImageWidthY);
 
-            ImageUtmRect = new Rect(left, top, left + imgWidthMeters, top + imgHeightMeters);
+            ImageUtmRect = new Rect(left, top, utmImageWidthX, utmImageWidthY);
 
             if (AlignmentChanged != null)
                 AlignmentChanged(this, EventArgs.Empty);
@@ -130,7 +139,7 @@ namespace csNavplan
                 }
                 else
                 {
-                    BackgroundBrush = new SolidColorBrush(Colors.WhiteSmoke);
+                    BackgroundBrush = new SolidColorBrush(Colors.DarkGray);
                     MainWindow.Status = "Create empty background brush";
                 }
             }
@@ -148,21 +157,42 @@ namespace csNavplan
         internal void ResetSequenceNumbers()
         {
             for (var i = 0; i < Waypoints.Count; i++)
-                Waypoints[i].Sequence = i+1;
+                Waypoints[i].Sequence = i+1;                        
         }
 
-        #region LoadSave_Notimplemented
+        #region LoadSave
         public void Save()
         {
-            throw new NotImplementedException();
+            if (string.IsNullOrEmpty(PlanFilename))
+                SaveAs();
+            else
+            {
+                IsDirty = false;
+                string planString = JsonConvert.SerializeObject(this);
+                File.WriteAllText(PlanFilename, planString);
+            }
         }
-        public void SaveAs(string fileName)
+        public void SaveAs()
         {
-            throw new NotImplementedException();
+            SaveFileDialog d = new SaveFileDialog { Filter = "XML Files|*.xml|All Files|*.*", DefaultExt = "xml" };
+            if (d.ShowDialog() ?? false)
+            {
+                PlanFilename = d.FileName;
+                Save();
+            }
         }
-        public static Plan Load(string fileName)
+        public static Plan Load(string filename)
         {
-            throw new NotImplementedException();
+            Plan p = null;
+            if (File.Exists(filename))
+            {
+                // Open the file to read from.
+                string planString = File.ReadAllText(filename);
+                p = JsonConvert.DeserializeObject<Plan>(planString);
+                p.PlanFilename = filename;
+                p.IsDirty = false;
+            }
+            return p;
         }
 #endregion
     }

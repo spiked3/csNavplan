@@ -13,11 +13,12 @@
 
         <Menu DockPanel.Dock="Top" Margin="2" >
             <MenuItem Header="_File" >
-                <MenuItem Header="_New" />
-                <MenuItem Header="_Save" Click="Save_Click" ContextMenuClosing="SaveAs_Click" />
-                <MenuItem Header="Save _as ...." />
+                <MenuItem Header="_New" Click="New_Click"  />
+                <MenuItem Header="_Open ..." Click="Open_Click" />
+                <MenuItem Header="_Save" Click="Save_Click"/>
+                <MenuItem Header="Save _as ...." Click="SaveAs_Click"  />
                 <Separator />
-                <MenuItem Header="_Clear Image" Click="Clear_Click"  />
+                <MenuItem Header="_Clear Image" Click="ClearImage_Click"  />
                 <MenuItem Header="_Import Image ..." Click="ImportImage_Click" />
                 <MenuItem Header="Sa_ve Image ..." Click="SaveImage_Click" />
                 <MenuItem Header="Color ..." Click="Color_Click" />
@@ -69,8 +70,14 @@
             </StatusBarItem>
         </StatusBar>
 
-        <StackPanel Orientation="Vertical" DockPanel.Dock="Right" Width="Auto">
-            <Expander Header="Alignment Points">
+            <Expander x:Name="alignmentExpander" DockPanel.Dock="Right" ExpandDirection="Left" >
+                <Expander.Header>
+                <TextBlock Text="Alignment Points">
+                    <TextBlock.LayoutTransform>
+                        <RotateTransform Angle="-90"/>
+                    </TextBlock.LayoutTransform>
+                </TextBlock>
+            </Expander.Header>
                 <StackPanel Orientation="Vertical" Width="Auto">
                     <local:AlignPoint DataContext="{Binding Plan.ImageData}" Height="Auto" Width="Auto" />
                     <Button Content="Google" Width="75" Click="Google_Click" Margin="4" />
@@ -79,22 +86,32 @@
                     <local:AlignPoint DataContext="{Binding Plan.Origin}" />
                 </StackPanel>
             </Expander>
-            <local:WayPointCRUD DataContext="{Binding Plan.Waypoints}" />    
             
-        </StackPanel>
-
-        <local:PlanCanvas x:Name="grid1" Background="WhiteSmoke" AlignPointBrush="Yellow" Foreground="White" 
+        <Grid >
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition Width="220" />
+            </Grid.ColumnDefinitions>
+                <local:PlanCanvas x:Name="grid1" Background="WhiteSmoke" AlignPointBrush="Yellow" Foreground="White" 
                           MouseRightButtonDown="grid1_MouseRightButtonDown" MouseMove="grid1_MouseMove" >
             <local:PlanCanvas.ContextMenu>
                 <ContextMenu>
                     <MenuItem Header="Align1" Click="Align1_Click" />
                     <MenuItem Header="Align2" Click="Align2_Click" />
                     <MenuItem Header="Origin" Click="Origin_Click" />
-                    <MenuItem Header="WayPoint" />
-                    <MenuItem Header="Action WayPoint" />
-                    <MenuItem Header="Test" />
+                    <Separator />
+                    <MenuItem Header="WayPoint" Click="Waypoint_Click"  />
+                    <MenuItem Header="Action WayPoint" Click="ActionWaypoint_Click" />
+                    
+                    <Separator />
+                    <MenuItem Header="Test" Click="Test_Click" />                    
+                
                 </ContextMenu>
             </local:PlanCanvas.ContextMenu>
         </local:PlanCanvas>
+                <local:WayPointCRUD DataContext="{Binding Plan}" Grid.Column="1" />    
+            
+        </Grid>
+
     </DockPanel>
 </Window>

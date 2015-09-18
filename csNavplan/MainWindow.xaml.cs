@@ -109,9 +109,24 @@ namespace csNavplan
 
         private void Window_Closing(object sender, CancelEventArgs e)
         {
+            if (Plan.IsDirty)
+            {
+                var rc = MessageBox.Show("Plan has changed, save?", "Save", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+                if (rc == MessageBoxResult.Cancel)
+                {
+                    e.Cancel = true;
+                    return;
+                }
+                if (rc == MessageBoxResult.Yes)
+                    Plan.Save();
+            }
+
+            if (Plan.PlanFilename?.Length > 0)
+                Settings1.Default.lastPlan = Plan.PlanFilename;
+            else
+                Settings1.Default.lastPlan = null;
             Settings1.Default.Width = (float)Width;
             Settings1.Default.Height = (float)Height;
-            Settings1.Default.Plan = JsonConvert.SerializeObject(Plan);
             Settings1.Default.Save();
         }
 
@@ -122,28 +137,18 @@ namespace csNavplan
             if (Width < 20) Width = 640;
             if (Height < 20) Height = 480;
 
-            Plan = JsonConvert.DeserializeObject<Plan>(Settings1.Default.Plan);
-
-            if (Plan == null)
-                Plan = new Plan();
-
-            // todo stub
-            if (Plan.Waypoints.Count == 0)
+            if (Settings1.Default.lastPlan?.Length > 0)
             {
-                Random r = new Random();
-                for (var i = 0; i < 24; i++)
-                {
-                    var w = new Waypoint();
-                    w.XY = new Point(r.Next(), r.Next());
-                    w.isAction = r.Next(50) < 9;
-                    Plan.Waypoints.Add(w);
-                }
-                Plan.Waypoints.Sort(c => c.Sequence);
+                Plan = Plan.Load(Settings1.Default.lastPlan);
+                Plan.AlignmentChanged += Plan_AlignmentChanged;
+                Plan.OnAlignmentPointChanged();
             }
-            Plan.ResetSequenceNumbers();
+            else
+                New_Click(this, null);
+        }
 
-            Plan.AlignmentChanged += Plan_AlignmentChanged;
-            Plan.OnAlignmentPointChanged(); // cause recalc
+        private void Waypoints_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
             grid1.InvalidateVisual();
         }
 
@@ -152,6 +157,7 @@ namespace csNavplan
             var a = Plan.Align1.UtmCoord.X - Plan.Align2.UtmCoord.X;
             var b = Plan.Align1.UtmCoord.Y - Plan.Align2.UtmCoord.Y;
             AlignUtmDistance = Math.Sqrt((a * a) + (b * b));
+            grid1.InvalidateVisual();
         }
 
         private void Align1_Click(object sender, RoutedEventArgs e)
@@ -200,7 +206,7 @@ namespace csNavplan
             Close();
         }
 
-        private void Clear_Click(object sender, RoutedEventArgs e)
+        private void ClearImage_Click(object sender, RoutedEventArgs e)
         {
             Plan.ImageFileName = "";
             Plan.ImageData.GpsCoord = new Point(0, 0);
@@ -208,19 +214,48 @@ namespace csNavplan
             grid1.InvalidateVisual();
         }
 
+        private void New_Click(object sender, RoutedEventArgs e)
+        {
+            Plan = new Plan();
+            Plan.AlignmentChanged += Plan_AlignmentChanged;
+
+            // todo stub
+#if true
+            Random r = new Random();
+            for (var i = 0; i < 32; i++)
+            {
+                var w = new Waypoint();
+                w.XY = new Point(r.Next(100)/100.0, r.Next(100)/100.0);
+                w.isAction = r.Next(50) < 9;
+                Plan.Waypoints.Add(w);
+            }
+            Plan.Waypoints.Sort(c => c.Sequence);
+#endif
+
+            Plan.ResetSequenceNumbers();
+            Plan.AlignmentChanged += Plan_AlignmentChanged;
+            Plan.Waypoints.CollectionChanged += Waypoints_CollectionChanged;
+
+            Plan.OnAlignmentPointChanged(); // cause recalc
+            grid1.InvalidateVisual();
+        }
+
+        private void Open_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog d = new OpenFileDialog { Filter = "XML Plan Files|*.xml|All Files|*.*" };
+            if (d.ShowDialog() ?? false)
+                Plan = Plan.Load(d.FileName);
+            grid1.InvalidateVisual();
+        }
+
         void Save_Click(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrEmpty(Filename))
-                SaveAs_Click(sender, e);
-            else
-                Plan.Save();
+            Plan.Save();
         }
 
         void SaveAs_Click(object sender, RoutedEventArgs e)
         {
-            SaveFileDialog d = new SaveFileDialog { Filter = "XML Files|*.xml|All Files|*.*", DefaultExt = "xml" };
-            if (d.ShowDialog() ?? false)
-                Plan.SaveAs(d.FileName);
+            Plan.SaveAs();
         }
 
         private void Google_Click(object sender, RoutedEventArgs e)
@@ -243,6 +278,25 @@ namespace csNavplan
             SaveFileDialog d = new SaveFileDialog { Filter = "JPG Files|*.jpg", DefaultExt = "jpg" };
             if (d.ShowDialog() ?? false)
                 Plan.SaveImage(d.FileName);
+        }
+
+        private void Waypoint_Click(object sender, RoutedEventArgs e)
+        {
+            Waypoint wp = new Waypoint { isAction = false };
+            wp.XY = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
+            Plan.Waypoints.Add(wp);
+        }
+
+        private void ActionWaypoint_Click(object sender, RoutedEventArgs e)
+        {
+            Waypoint wp = new Waypoint { isAction = true };
+            wp.XY = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
+            Plan.Waypoints.Add(wp);
+        }
+
+        private void Test_Click(object sender, RoutedEventArgs e)
+        {
+            System.Diagnostics.Debugger.Break();
         }
 
         private void Color_Click(object sender, RoutedEventArgs e)

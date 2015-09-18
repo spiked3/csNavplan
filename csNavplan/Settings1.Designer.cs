@@ -25,18 +25,6 @@ namespace csNavplan {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string Plan {
-            get {
-                return ((string)(this["Plan"]));
-            }
-            set {
-                this["Plan"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("0")]
         public float Width {
             get {
@@ -56,6 +44,18 @@ namespace csNavplan {
             }
             set {
                 this["Height"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string lastPlan {
+            get {
+                return ((string)(this["lastPlan"]));
+            }
+            set {
+                this["lastPlan"] = value;
             }
         }
     }

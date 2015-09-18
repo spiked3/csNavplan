@@ -23,6 +23,22 @@ namespace csNavplan
         public static readonly DependencyProperty ForegroundProperty =
             DependencyProperty.Register("Foreground", typeof(Brush), typeof(PlanCanvas), new PropertyMetadata(new SolidColorBrush(Colors.Black)));
 
+        public Brush ActionWpBrush
+        {
+            get { return (Brush)GetValue(ActionWpBrushProperty); }
+            set { SetValue(ActionWpBrushProperty, value); }
+        }
+        public static readonly DependencyProperty ActionWpBrushProperty =
+            DependencyProperty.Register("ActionWpBrush", typeof(Brush), typeof(PlanCanvas), new PropertyMetadata(new SolidColorBrush(Colors.Red)));
+
+        public Brush WpBrush
+        {
+            get { return (Brush)GetValue(WpBrushProperty); }
+            set { SetValue(WpBrushProperty, value); }
+        }
+        public static readonly DependencyProperty WpBrushProperty =
+            DependencyProperty.Register("WpBrush", typeof(Brush), typeof(PlanCanvas), new PropertyMetadata(new SolidColorBrush(Colors.Orange)));
+
         public Brush AlignPointBrush
         {
             get { return (Brush)GetValue(AlignPointBrushProperty); }
@@ -61,27 +77,49 @@ namespace csNavplan
 
             plan.RenderBackground(dc, this);
 
-            DrawPoint(dc, plan.Origin, AlignPointBrush, Foreground);
-            DrawPoint(dc, plan.Align1, AlignPointBrush, Foreground);
-            DrawPoint(dc, plan.Align2, AlignPointBrush, Foreground);
+            DrawPlanPoint(dc, plan.Origin);
+            DrawPlanPoint(dc, plan.Align1);
+            DrawPlanPoint(dc, plan.Align2);
+
+            foreach (var w in plan.Waypoints)
+                DrawWaypoint(dc, w);
         }
 
-        void DrawPoint(DrawingContext dc, PlanPoint pp, Brush elipseBrush, Brush labelBrush)
+        private void DrawWaypoint(DrawingContext dc, Waypoint wp)
         {
-            // AB is the pctg point, XY is the local Coordinates
             FormattedText ft;
-            Point tp, p = Pct2CanvasPoint(pp.AB);    
+            Point tp, p = new Point(wp.XY.X * ActualWidth, wp.XY.Y * ActualHeight);
+            Plan plan = (DataContext as MainWindow).Plan;
 
-            dc.DrawEllipse(elipseBrush, null, p, markerRadius, markerRadius);
+            if (plan == null) return;
 
-            ft = new FormattedText($"{pp.PointName}", Thread.CurrentThread.CurrentUICulture,
-                FlowDirection.LeftToRight, Typeface, NpEmSize, labelBrush);
+            dc.DrawEllipse(wp.isAction ? ActionWpBrush : WpBrush,
+                null, p, markerRadius, markerRadius);
+
+            ft = new FormattedText($"{wp.Sequence}", Thread.CurrentThread.CurrentUICulture,
+                FlowDirection.LeftToRight, Typeface, NpEmSize, Foreground);
             tp = new Point(p.X - (ft.Width / 2), p.Y + (markerRadius / 2) + 1);
             dc.DrawText(ft, tp);
 
-            ft = new FormattedText($"({pp.XY.X:F2}, {pp.XY.Y:F2})", Thread.CurrentThread.CurrentUICulture,
-                FlowDirection.LeftToRight, Typeface, NpEmSize, labelBrush);
+            var localXY = plan.Pct2Local(wp.XY);
+
+            ft = new FormattedText($"({localXY.X:F2}, {localXY.Y:F2})", Thread.CurrentThread.CurrentUICulture,
+                FlowDirection.LeftToRight, Typeface, NpEmSize, Foreground);
             tp = new Point(p.X - (ft.Width / 2), ft.Height + p.Y + (markerRadius / 2) + 1);
+            dc.DrawText(ft, tp);
+        }
+
+        void DrawPlanPoint(DrawingContext dc, PlanPoint pp)
+        {
+            // AB is the pctg point, XY is the local Coordinates
+            FormattedText ft;
+            Point tp, p = Pct2CanvasPoint(pp.AB);
+
+            dc.DrawEllipse(AlignPointBrush, null, p, markerRadius, markerRadius);
+
+            ft = new FormattedText($"{pp.PointName}", Thread.CurrentThread.CurrentUICulture,
+                FlowDirection.LeftToRight, Typeface, NpEmSize, Foreground);
+            tp = new Point(p.X - (ft.Width / 2), p.Y + (markerRadius / 2) + 1);
             dc.DrawText(ft, tp);
         }
     }

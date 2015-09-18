@@ -95,6 +95,7 @@ namespace csNavplan
             return LetterDesignator;
         }
 
+        // todo this needs to be verified (and ATM I think is wrong )
         public static Point ToLonLat(double utmX, double utmY, string utmZone)
         {
             Point p_out = new Point(0, 0);  // x = longitude, y = latitude
