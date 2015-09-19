@@ -1,10 +1,14 @@
-﻿<UserControl x:Class="csNavplan.AlignPoint"
+﻿<UserControl x:Class="csNavplan.AlignPointCtl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:csNavplan"
              mc:Ignorable="d" >
+        <UserControl.Resources>
+            <local:UtmConverter x:Key="UtmConverter" />
+        </UserControl.Resources>
+    
     <Grid Background="White">
         <Grid.Resources>
             <Style TargetType="TextBlock">
@@ -43,6 +47,7 @@
         <TextBox Grid.Row="1" Text="{Binding AB,StringFormat={}{0:F3}}" Grid.Column="1" />
         <TextBox Grid.Row="2" Text="{Binding XY,StringFormat={}{0:F3}}" Grid.Column="1" />
         <TextBox Grid.Row="3" Text="{Binding GpsCoord,StringFormat={}{0:F6}}" Grid.Column="1" TextChanged="Gps_TextChanged" />
-        <TextBox Grid.Row="4" Text="{Binding UtmCoord,StringFormat={}{0:F6}}" Grid.Column="1" TextChanged="Utm_TextChanged" />
+        <TextBox Grid.Row="4" Text="{Binding UtmCoord,StringFormat={}{0:F6},Converter={StaticResource UtmConverter}}" Grid.Column="1" TextChanged="Utm_TextChanged" />
+
     </Grid>
 </UserControl>

@@ -97,15 +97,15 @@ namespace csNavplan
                 null, p, markerRadius, markerRadius);
 
             ft = new FormattedText($"{wp.Sequence}", Thread.CurrentThread.CurrentUICulture,
-                FlowDirection.LeftToRight, Typeface, NpEmSize, Foreground);
-            tp = new Point(p.X - (ft.Width / 2), p.Y + (markerRadius / 2) + 1);
+                FlowDirection.LeftToRight, Typeface, NpEmSize, Brushes.Black);      // todo harcoded brush
+            tp = new Point(p.X - (ft.Width / 2), p.Y - markerRadius - 1);
             dc.DrawText(ft, tp);
 
             var localXY = plan.Pct2Local(wp.XY);
 
             ft = new FormattedText($"({localXY.X:F2}, {localXY.Y:F2})", Thread.CurrentThread.CurrentUICulture,
                 FlowDirection.LeftToRight, Typeface, NpEmSize, Foreground);
-            tp = new Point(p.X - (ft.Width / 2), ft.Height + p.Y + (markerRadius / 2) + 1);
+            tp = new Point(p.X - (ft.Width / 2), p.Y + 4);
             dc.DrawText(ft, tp);
         }
 

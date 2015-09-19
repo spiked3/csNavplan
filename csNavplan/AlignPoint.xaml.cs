@@ -16,9 +16,9 @@ using System.Windows.Threading;
 
 namespace csNavplan
 {
-    public partial class AlignPoint : UserControl
+    public partial class AlignPointCtl : UserControl
     {
-        public AlignPoint()
+        public AlignPointCtl()
         {
             InitializeComponent();
         }
@@ -49,6 +49,7 @@ namespace csNavplan
 
         private void UtmUpdate(object sender, EventArgs e)
         {
+            // todo this needs to bubble up an AlignmentPointChanged event
             DispatcherTimer dt = sender as DispatcherTimer;
             PlanPoint p = dt.Tag as PlanPoint;
             if (p == null) System.Diagnostics.Debugger.Break();
@@ -59,15 +60,15 @@ namespace csNavplan
                 return;
             }
 
-            Utm u = new Utm(p.GpsCoord.Y, p.GpsCoord.X);
-            p.UtmCoord = new Point(u.Easting, u.Northing);
+            p.UtmCoord = Utm.FromLonLat(p.GpsCoord.Y, p.GpsCoord.X);
 
             p.dt.Stop();
-            p.dt = null;
+            p.dt = null;            
         }
 
         private void Utm_TextChanged(object sender, TextChangedEventArgs e)
         {
+            RaiseEvent(new RoutedEventArgs(MainWindow.PlanChangedEvent));
         }
     }
 }

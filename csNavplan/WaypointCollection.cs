@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -10,17 +12,35 @@ namespace csNavplan
 {
     public class WaypointCollection : SortableObservableCollection<Waypoint>
     {
+        
     }
 
-    public class Waypoint
+    public class Waypoint : INotifyPropertyChanged
     {
+        #region INotifyPropertyChanged
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        public void OnPropertyChanged([CallerMemberName] String T = "")
+        {
+            if (PropertyChanged != null)
+                PropertyChanged(this, new PropertyChangedEventArgs(T));
+        }
+
+        #endregion
+
         // todo change isAction bool to wayPointType enum
         // todo would be nice to set background color based on enum
-        // todo should we implement INotifyPropertyChange?
-        public int Sequence { get; set; }
-        // XY is actually a image percentage value, it must be converted to a local coordinates 
-        public Point XY { get; set; }
-        public bool isAction { get; set; }
+
+        public int Sequence { get { return _Sequence; } set { _Sequence = value; OnPropertyChanged(); } }
+        int _Sequence = 0;
+
+        public Point XY { get { return _XY; } set { _XY = value; OnPropertyChanged(); } }
+        Point _XY;
+
+        public bool isAction { get { return _isAction; } set { _isAction = value; OnPropertyChanged(); OnPropertyChanged("isActionString"); } }
+        bool _isAction = false; 
+
         public string isActionString { get { return isAction ? "Action" : "";  } }
     }
 

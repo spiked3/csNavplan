@@ -41,9 +41,9 @@ namespace csNavplan
         Point _GpsCoord;
 
         // UTM is computed or designated coordinates in meters
-        // if GPS is entered, UTM is computed, if manually entered it is left alone
-        public Point UtmCoord { get { return _UtmCoord; } set { _UtmCoord = value; OnPropertyChanged(); } }
-        Point _UtmCoord = new Point(0,0); 
+        // if GPS is entered, UTM is computed, if manually entered it is left alone as basis for local coordinates
+        public Utm UtmCoord { get { return _UtmCoord; } set { _UtmCoord = value; OnPropertyChanged(); } }
+        Utm _UtmCoord = new Utm(); 
 
         // for visuals
         public string PointName { get { return _PointName; } set { _PointName = value; OnPropertyChanged(); } }

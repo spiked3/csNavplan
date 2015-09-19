@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Data;
 
 namespace csNavplan
 {
@@ -16,8 +18,9 @@ namespace csNavplan
         public double Easting { get; set; }
         public double Northing { get; set; }
 
-        public Utm(double LonDeg, double LatDeg)
+        static public Utm FromLonLat(double LonDeg, double LatDeg)
         {
+            Utm u = new Utm();
             const double a = 6378137; //WGS84
             const double eccSquared = 0.00669438; //WGS84
             const double k0 = 0.9996;
@@ -45,7 +48,7 @@ namespace csNavplan
             double LongOriginRad = LongOrigin * deg2rad;
 
             //compute the UTM Zone from the latitude and longitude
-            Zone = ZoneNumber.ToString() + UTMLetterDesignator(LatDeg);
+            u.Zone = ZoneNumber.ToString() + UTMLetterDesignator(LatDeg);
 
             const double eccPrimeSquared = (eccSquared) / (1 - eccSquared);
 
@@ -59,13 +62,15 @@ namespace csNavplan
                             + (15 * eccSquared * eccSquared / 256 + 45 * eccSquared * eccSquared * eccSquared / 1024) * Math.Sin(4 * LatRad)
                             - (35 * eccSquared * eccSquared * eccSquared / 3072) * Math.Sin(6 * LatRad));
 
-            Easting = k0 * N * (A + (1 - T + C) * A * A * A / 6 + (5 - 18 * T + T * T + 72 * C - 58 * eccPrimeSquared)
+            u.Easting = k0 * N * (A + (1 - T + C) * A * A * A / 6 + (5 - 18 * T + T * T + 72 * C - 58 * eccPrimeSquared)
                 * A * A * A * A * A / 120) + 500000.0;
 
-            Northing = k0 * (M + N * Math.Tan(LatRad) * (A * A / 2 + (5 - T + 9 * C + 4 * C * C) * A * A * A * A / 24
+            u.Northing = k0 * (M + N * Math.Tan(LatRad) * (A * A / 2 + (5 - T + 9 * C + 4 * C * C) * A * A * A * A / 24
                 + (61 - 58 * T + T * T + 600 * C - 330 * eccPrimeSquared) * A * A * A * A * A * A / 720));
             if (LatDeg < 0)
-                Northing += 10000000.0; //10000000 meter offset for southern hemisphere
+                u.Northing += 10000000.0; //10000000 meter offset for southern hemisphere
+
+            return u;
         }
 
         static char UTMLetterDesignator(double Lat)
@@ -95,24 +100,25 @@ namespace csNavplan
             return LetterDesignator;
         }
 
-        // todo this needs to be verified (and ATM I think is wrong )
-        public static Point ToLonLat(double utmX, double utmY, string utmZone)
+        // todo this needs to be verified and ATM I think is wrong, 
+        //   todo may have something to do with the zone string format it wants
+        public Point ToLonLat()
         {
             Point p_out = new Point(0, 0);  // x = longitude, y = latitude
 
-            bool isNorthHemisphere = utmZone.Last() >= 'N';
+            bool isNorthHemisphere = Zone.Last() >= 'N';
 
             var diflat = -0.00066286966871111111111111111111111111;
             var diflon = -0.0003868060578;
 
-            var zone = int.Parse(utmZone.Remove(utmZone.Length - 1));
+            var zone = int.Parse(Zone.Remove(Zone.Length - 1));
             var c_sa = 6378137.000000;
             var c_sb = 6356752.314245;
             var e2 = Math.Pow((Math.Pow(c_sa, 2) - Math.Pow(c_sb, 2)), 0.5) / c_sb;
             var e2cuadrada = Math.Pow(e2, 2);
             var c = Math.Pow(c_sa, 2) / c_sb;
-            var x = utmX - 500000;
-            var y = isNorthHemisphere ? utmY : utmY - 10000000;
+            var x = Easting - 500000;
+            var y = isNorthHemisphere ? Northing : Northing - 10000000;
 
             var s = ((zone * 6.0) - 183.0);
             var lat = y / (c_sa * 0.9996);
@@ -138,6 +144,41 @@ namespace csNavplan
             p_out.X = ((delt * (180.0 / Math.PI)) + s) + diflon;
             p_out.Y = ((lat + (1 + e2cuadrada * Math.Pow(Math.Cos(lat), 2) - (3.0 / 2.0) * e2cuadrada * Math.Sin(lat) * Math.Cos(lat) * (tao - lat)) * (tao - lat)) * (180.0 / Math.PI)) + diflat;
             return p_out;
+        }
+
+        public override string ToString()
+        {
+            return $"{Easting:F3}, {Northing:F3}, {Zone}";
+        }
+    }
+
+    public class UtmConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (targetType == typeof(string))
+                return (value as Utm)?.ToString();
+            return null;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (targetType == typeof(Utm))
+            {
+                try
+                {
+                    var tokens = ((string)value).Split(',');
+                    double x = double.Parse(tokens[0]);
+                    double y = double.Parse(tokens[1]);
+                    string z = tokens[2];
+                    return new Utm { Easting = x, Northing = y, Zone = z };
+                }
+                catch (Exception)
+                {
+                    System.Diagnostics.Trace.WriteLine($"UtmConverter::ConvertBack threw exception, value = {value}");
+                }
+            }
+            return null;
         }
     }
 }

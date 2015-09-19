@@ -15,9 +15,6 @@ using System.Windows.Shapes;
 
 namespace csNavplan
 {
-    /// <summary>
-    /// Interaction logic for WayPointCRUD.xaml
-    /// </summary>
     public partial class WayPointCRUD : UserControl
     {
         public WayPointCRUD()
@@ -31,12 +28,15 @@ namespace csNavplan
             var waypointsToRemove = waypointListView1.SelectedItems;
             while (waypointsToRemove.Count > 0)
                 wc.Remove((Waypoint)waypointsToRemove[0]);
+            waypointListView1.Items.Refresh();
+            RaiseEvent(new RoutedEventArgs(MainWindow.PlanChangedEvent));
         }
 
         private void Renum_Click(object sender, RoutedEventArgs e)
         {
-            (DataContext as Plan).ResetSequenceNumbers();
+            (DataContext as Plan).ResetSequenceNumbers();            
             waypointListView1.Items.Refresh();
+            RaiseEvent(new RoutedEventArgs(MainWindow.PlanChangedEvent));
         }
 
         private void Up_Click(object sender, RoutedEventArgs e)

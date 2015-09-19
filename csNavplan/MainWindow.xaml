@@ -6,12 +6,11 @@
         xmlns:local="clr-namespace:csNavplan"
         xmlns:xtk="http://schemas.xceed.com/wpf/xaml/toolkit"        
         mc:Ignorable="d"
-        Title="csNavPlan - spiked3.com"
+        Title="{Binding WindowTitle}"
         DataContext="{Binding RelativeSource={RelativeSource Self}}" Closing="Window_Closing" Loaded="Window_Loaded" d:DesignWidth="1046" d:DesignHeight="857" >
-
     <DockPanel LastChildFill="True">
 
-        <Menu DockPanel.Dock="Top" Margin="2" >
+        <Menu DockPanel.Dock="Top" Margin="4" >
             <MenuItem Header="_File" >
                 <MenuItem Header="_New" Click="New_Click"  />
                 <MenuItem Header="_Open ..." Click="Open_Click" />
@@ -24,6 +23,16 @@
                 <MenuItem Header="Color ..." Click="Color_Click" />
                 <Separator />
                 <MenuItem Header="E_xit" Click="Exit_Click" />
+            </MenuItem>
+            <MenuItem Header="Plan to Clipboard" Click="PlanToClipboard_Click" />
+            <MenuItem >
+                <MenuItem.Header>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" >
+                        <TextBlock Text="Grid" Margin="8,0" />
+                        <Slider x:Name="slider1" Width="72" Minimum=".1" Maximum="10" Value="{Binding GridSpacing}" />
+                        <TextBlock Text="{Binding Value,ElementName=slider1}" Margin="8,0" />
+                    </StackPanel>
+                </MenuItem.Header>
             </MenuItem>
         </Menu>
 
@@ -43,19 +52,19 @@
             <StatusBarItem >
                 <StackPanel Orientation="Horizontal" >
                     <TextBlock Text="Local" Margin="2,0,4,0"/>
-                    <TextBlock Text="{Binding MouseLocal,StringFormat={}{0:F6}}" />
+                    <TextBlock Text="{Binding MouseLocal,StringFormat={}{0:F3}}" />
                 </StackPanel>
             </StatusBarItem>
             <StatusBarItem >
                 <StackPanel Orientation="Horizontal" >
                     <TextBlock Text="Utm" Margin="8,0,4,0"/>
-                    <TextBlock Text="{Binding MouseUtm,StringFormat={}{0:F6}}" />
+                    <TextBlock Text="{Binding MouseUtm,StringFormat={}{0:F3}}" />
                 </StackPanel>
             </StatusBarItem>
             <StatusBarItem >
                 <StackPanel Orientation="Horizontal" >
                     <TextBlock Text="Gps" Margin="8,0,4,0" />
-                    <TextBlock Text="{Binding MouseGps,StringFormat={}{0:F6}}" />
+                    <TextBlock Text="{Binding MouseGps,StringFormat={}{0:F5}}" />
                 </StackPanel>
             </StatusBarItem>
             <Separator />
@@ -70,47 +79,47 @@
             </StatusBarItem>
         </StatusBar>
 
-            <Expander x:Name="alignmentExpander" DockPanel.Dock="Right" ExpandDirection="Left" >
-                <Expander.Header>
+        <Expander x:Name="alignmentExpander" DockPanel.Dock="Right" ExpandDirection="Left" IsExpanded="True" >
+            <Expander.Header>
                 <TextBlock Text="Alignment Points">
                     <TextBlock.LayoutTransform>
                         <RotateTransform Angle="-90"/>
                     </TextBlock.LayoutTransform>
                 </TextBlock>
             </Expander.Header>
-                <StackPanel Orientation="Vertical" Width="Auto">
-                    <local:AlignPoint DataContext="{Binding Plan.ImageData}" Height="Auto" Width="Auto" />
-                    <Button Content="Google" Width="75" Click="Google_Click" Margin="4" />
-                    <local:AlignPoint DataContext="{Binding Plan.Align1}" />
-                    <local:AlignPoint DataContext="{Binding Plan.Align2}" />
-                    <local:AlignPoint DataContext="{Binding Plan.Origin}" />
-                </StackPanel>
-            </Expander>
-            
+            <StackPanel Orientation="Vertical" Width="Auto">
+                <local:AlignPointCtl DataContext="{Binding Plan.ImageData}" Height="Auto" Width="Auto" />
+                <Button Content="Google" Width="75" Click="Google_Click" Margin="4" />
+                <local:AlignPointCtl DataContext="{Binding Plan.Align1}" />
+                <local:AlignPointCtl DataContext="{Binding Plan.Align2}" />
+                <local:AlignPointCtl DataContext="{Binding Plan.Origin}" />
+            </StackPanel>
+        </Expander>
+
         <Grid >
             <Grid.ColumnDefinitions>
                 <ColumnDefinition />
                 <ColumnDefinition Width="220" />
             </Grid.ColumnDefinitions>
-                <local:PlanCanvas x:Name="grid1" Background="WhiteSmoke" AlignPointBrush="Yellow" Foreground="White" 
+            <local:PlanCanvas x:Name="grid1" Background="WhiteSmoke" AlignPointBrush="Yellow" Foreground="White" 
                           MouseRightButtonDown="grid1_MouseRightButtonDown" MouseMove="grid1_MouseMove" >
-            <local:PlanCanvas.ContextMenu>
-                <ContextMenu>
-                    <MenuItem Header="Align1" Click="Align1_Click" />
-                    <MenuItem Header="Align2" Click="Align2_Click" />
-                    <MenuItem Header="Origin" Click="Origin_Click" />
-                    <Separator />
-                    <MenuItem Header="WayPoint" Click="Waypoint_Click"  />
-                    <MenuItem Header="Action WayPoint" Click="ActionWaypoint_Click" />
-                    
-                    <Separator />
-                    <MenuItem Header="Test" Click="Test_Click" />                    
-                
-                </ContextMenu>
-            </local:PlanCanvas.ContextMenu>
-        </local:PlanCanvas>
-                <local:WayPointCRUD DataContext="{Binding Plan}" Grid.Column="1" />    
-            
+                <local:PlanCanvas.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Align1" Click="Align1_Click" />
+                        <MenuItem Header="Align2" Click="Align2_Click" />
+                        <MenuItem Header="Origin" Click="Origin_Click" />
+                        <Separator />
+                        <MenuItem Header="WayPoint" Click="Waypoint_Click"  />
+                        <MenuItem Header="Action WayPoint" Click="ActionWaypoint_Click" />
+
+                        <Separator />
+                        <MenuItem Header="Test" Click="Test_Click" />
+
+                    </ContextMenu>
+                </local:PlanCanvas.ContextMenu>
+            </local:PlanCanvas>
+            <local:WayPointCRUD DataContext="{Binding Plan}" Grid.Column="1" />
+
         </Grid>
 
     </DockPanel>
