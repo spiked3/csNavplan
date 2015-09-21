@@ -11,6 +11,14 @@ namespace csNavplan
 {
     public partial class MainWindow : Window
     {
+        public float RulerHeading
+        {
+            get { return (float)GetValue(RulerHeadingProperty); }
+            set { SetValue(RulerHeadingProperty, value); }
+        }
+        public static readonly DependencyProperty RulerHeadingProperty =
+            DependencyProperty.Register("RulerHeading", typeof(float), typeof(MainWindow));
+
         public string WindowTitle
         {
             get { return (string)GetValue(WindowTitleProperty); }
@@ -178,6 +186,24 @@ namespace csNavplan
             grid1.InvalidateVisual();
         }
 
+        /* seen this on the internet http://www.anddev.org/viewtopic.php?p=20195#20195
+        private double gps2m(float lat_a, float lng_a, float lat_b, float lng_b) {
+            float pk = (float) (180/3.14169);
+
+            float a1 = lat_a / pk;
+            float a2 = lng_a / pk;
+            float b1 = lat_b / pk;
+            float b2 = lng_b / pk;
+
+            float t1 = FloatMath.cos(a1)*FloatMath.cos(a2)*FloatMath.cos(b1)*FloatMath.cos(b2);
+            float t2 = FloatMath.cos(a1)*FloatMath.sin(a2)*FloatMath.cos(b1)*FloatMath.sin(b2);
+            float t3 = FloatMath.sin(a1)*FloatMath.sin(b1);
+            double tt = Math.acos(t1 + t2 + t3);
+
+            return 6366000*tt;
+        }
+        */
+
         public event RoutedEventHandler PlanChanged
         {
             add { AddHandler(PlanChangedEvent, value); }
@@ -212,6 +238,25 @@ namespace csNavplan
             grid1.InvalidateVisual();
         }
 
+        bool mouseDragStarted = false;
+
+        private void grid1_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            mouseDragStarted = false;
+            grid1.RulerStart = grid1.RulerEnd = null;
+        }
+
+        private void grid1_MouseLeave(object sender, MouseEventArgs e)
+        {
+            grid1_MouseLeftButtonUp(sender, null);
+        }
+
+        private void grid1_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            mouseDragStarted = true;
+            grid1.RulerEnd = grid1.RulerStart = e.GetPosition(grid1);
+        }
+
         private void grid1_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
         {
             var p = e.GetPosition(grid1);
@@ -223,10 +268,19 @@ namespace csNavplan
         {
             var p = e.GetPosition(grid1);
             MousePct = new Point(p.X / grid1.ActualWidth, p.Y / grid1.ActualHeight);
-            MouseXY = p;            
+            MouseXY = p;
             MouseUtm = Plan.Pct2Utm(MousePct);
             MouseLocal = Plan.Utm2Local(MouseUtm);
             MouseGps = MouseUtm.ToLonLat();
+
+            if (mouseDragStarted)
+            {
+                // todo needs normalizing -179/180
+                var h = Math.Atan2(grid1.RulerEnd.Value.Y - grid1.RulerStart.Value.Y, grid1.RulerEnd.Value.X - grid1.RulerStart.Value.X);
+                RulerHeading = (float)(h * 180 / Math.PI) + 90;
+                grid1.RulerEnd = e.GetPosition(grid1);
+                grid1.InvalidateVisual();
+            }
         }
 
         private void Exit_Click(object sender, RoutedEventArgs e)
@@ -324,7 +378,7 @@ namespace csNavplan
 
         private void PlanToClipboard_Click(object sender, RoutedEventArgs e)
         {
-            Clipboard.SetText(Plan.GetNavXml());
+            Clipboard.SetText(Plan.GetNavXml(RulerHeading));
         }
 
         private void Color_Click(object sender, RoutedEventArgs e)

@@ -74,6 +74,21 @@
                     <TextBlock Text="{Binding AlignUtmDistance,StringFormat={}{0:F3}}" />
                 </StackPanel>
             </StatusBarItem>
+            <Separator />
+            <StatusBarItem >
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Ruler Heading " />
+                    <TextBlock Text="{Binding RulerHeading,StringFormat={}{0:F1}}" />
+                </StackPanel>
+            </StatusBarItem>
+            <Separator />
+            <StatusBarItem >
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Utm Rect " />
+                    <TextBlock Text="{Binding Plan.ImageUtmRect,StringFormat={}{0:F5}}" />
+                </StackPanel>
+            </StatusBarItem>
+            
             <StatusBarItem HorizontalAlignment="Right" >
                 <TextBlock x:Name="StatusBarTextBlock" />
             </StatusBarItem>
@@ -102,7 +117,7 @@
                 <ColumnDefinition Width="220" />
             </Grid.ColumnDefinitions>
             <local:PlanCanvas x:Name="grid1" Background="WhiteSmoke" AlignPointBrush="Yellow" Foreground="White" 
-                          MouseRightButtonDown="grid1_MouseRightButtonDown" MouseMove="grid1_MouseMove" >
+                          MouseRightButtonDown="grid1_MouseRightButtonDown" MouseMove="grid1_MouseMove" MouseLeftButtonDown="grid1_MouseLeftButtonDown" MouseLeftButtonUp="grid1_MouseLeftButtonUp" MouseLeave="grid1_MouseLeave" >
                 <local:PlanCanvas.ContextMenu>
                     <ContextMenu>
                         <MenuItem Header="Align1" Click="Align1_Click" />

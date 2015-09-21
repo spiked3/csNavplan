@@ -57,8 +57,9 @@ namespace csNavplan
         public Brush BackgroundBrush;
 
         [JsonIgnore]
-        public Rect ImageUtmRect;
-
+        public Rect ImageUtmRect { get { return _ImageUtmRect; } set { _ImageUtmRect = value; OnPropertyChanged(); } }
+        Rect _ImageUtmRect; 
+        
         string LastGoogleMapUri;        // hack
         public int GridDivisions = 10;      // todo 
 
@@ -75,8 +76,8 @@ namespace csNavplan
 
         public Utm Pct2Utm(Point a)
         {
-            return new Utm { Easting = ImageUtmRect.X + a.X * ImageUtmRect.Width,
-                Northing = ImageUtmRect.Y + a.Y * ImageUtmRect.Height, Zone = "10T" };
+            return new Utm { Easting = ImageUtmRect.X + (a.X * ImageUtmRect.Width),
+                Northing = ImageUtmRect.Y + (a.Y * ImageUtmRect.Height), Zone = "10T" };  // hack hardcoded zone
         }
 
         internal Point Utm2Local(Utm utm)
@@ -143,6 +144,7 @@ namespace csNavplan
 
             dc.DrawRectangle(BackgroundBrush, null, new Rect(0, 0, pc.ActualWidth, pc.ActualHeight));
 
+            //---R
             // todo should be fixed distance, eg draw 10 meter increments from origin
             for (double x = 0, y = 0; x < pc.ActualWidth; x += pc.ActualWidth / GridDivisions, y += pc.ActualHeight / GridDivisions)
             {
@@ -199,25 +201,21 @@ namespace csNavplan
             return p;
         }
 
-        internal string GetNavXml()
+        internal string GetNavXml(float initialHeading)
         {
             // todo someday maybe some sort of templates
             StringBuilder b = new StringBuilder();
             b.AppendLine("Pilot = Pilot.Factory(\"192.168.42.1\");");
             b.AppendLine("Pilot.OnPilotReceive += Pilot_OnReceive;");
-            b.AppendLine("Send(new { Cmd = \"RESET\" });");
+            b.AppendLine($"Send(new {{ Cmd = \"RESET\", Hdg = {initialHeading:F1} }});");
             b.AppendLine("Send(new { Cmd = \"CONFIG\", Geom = new float[] { 336.2F, 450F } });");
             b.AppendLine("Send(new { Cmd = \"ESC\", Value = 1 });");
-            b.AppendLine("for (var i = 0; i < 2; i++) {");
-
             foreach (Waypoint w in Waypoints)
             {
                 Point local = Pct2Local(w.XY);
                 b.AppendLine($"Send(new {{ Cmd = \"GOTOXY\", X={local.X:F3}, Y={local.Y:F3}, Pwr = 40.0F }});");
                 b.AppendLine("waitForEvent();");
             }
-
-            b.AppendLine("}");
             b.AppendLine("Send(new { Cmd = \"ESC\", Value = 0 });");
             return b.ToString();
         }

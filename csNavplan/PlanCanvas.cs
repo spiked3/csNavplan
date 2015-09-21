@@ -55,8 +55,12 @@ namespace csNavplan
         public static readonly DependencyProperty TypefaceProperty =
             DependencyProperty.Register("Typeface", typeof(Typeface), typeof(PlanCanvas), new PropertyMetadata(new Typeface("Arial")));
 
+        public Point? RulerStart { get; set; }
+        public Point? RulerEnd { get; set; }
+
         static Brush originBrush = Brushes.White;
         static Brush alignBrush = Brushes.Cyan;
+        static Pen RulerPen = new Pen(Brushes.White, 4.0);
 
         double NpEmSize = 10.0;
         Brush NpBrush = new SolidColorBrush(Colors.Magenta);
@@ -83,6 +87,9 @@ namespace csNavplan
 
             foreach (var w in plan.Waypoints)
                 DrawWaypoint(dc, w);
+
+            if (RulerStart != null && RulerEnd != null)
+                dc.DrawLine(RulerPen, RulerStart.Value, RulerEnd.Value);
         }
 
         private void DrawWaypoint(DrawingContext dc, Waypoint wp)
