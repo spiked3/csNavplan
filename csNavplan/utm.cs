@@ -141,8 +141,8 @@ namespace csNavplan
             var delt = Math.Atan(senoheps / (Math.Cos(nab)));
             var tao = Math.Atan(Math.Cos(delt) * Math.Tan(nab));
 
-            p_out.X = ((delt * (180.0 / Math.PI)) + s) + diflon;
-            p_out.Y = ((lat + (1 + e2cuadrada * Math.Pow(Math.Cos(lat), 2) - (3.0 / 2.0) * e2cuadrada * Math.Sin(lat) * Math.Cos(lat) * (tao - lat)) * (tao - lat)) * (180.0 / Math.PI)) + diflat;
+            p_out.Y = ((delt * (180.0 / Math.PI)) + s) + diflon;
+            p_out.X = ((lat + (1 + e2cuadrada * Math.Pow(Math.Cos(lat), 2) - (3.0 / 2.0) * e2cuadrada * Math.Sin(lat) * Math.Cos(lat) * (tao - lat)) * (tao - lat)) * (180.0 / Math.PI)) + diflat;
             return p_out;
         }
 

@@ -92,7 +92,7 @@ namespace csNavplan
 
         public void RecalcAlignment()
         {
-            // todo I think this is good
+            // todo so the problem is when an origin point is set it depends on current UtmRect to determine its Utm, but UtmRect depends on Utm of origin
             Utm middleUtm = Utm.FromLonLat(ImageData.GpsCoord.X, ImageData.GpsCoord.X);
 
             double utmDistanceBetweenAlignsX = Math.Abs(Align2.UtmCoord.Easting - Align1.UtmCoord.Easting);
@@ -103,8 +103,10 @@ namespace csNavplan
             double pctDistanceBetweenAlignsY = Math.Abs(Align2.AB.Y - Align1.AB.Y);
             double utmImageWidthY = 1.0 / pctDistanceBetweenAlignsY * utmDistanceBetweenAlignsY;
 
-            double left = Origin.UtmCoord.Easting - (Origin.AB.X * utmImageWidthX);
-            double top = Origin.UtmCoord.Northing - (Origin.AB.Y * utmImageWidthY);
+            //double left = Origin.UtmCoord.Easting - (Origin.AB.X * utmImageWidthX);
+            //double top = Origin.UtmCoord.Northing - (Origin.AB.Y * utmImageWidthY);
+            double left = middleUtm.Easting - (utmImageWidthX / 2);
+            double top = middleUtm.Northing - (utmImageWidthY / 2);
 
             ImageUtmRect = new Rect(left, top, utmImageWidthX, utmImageWidthY);
         }
