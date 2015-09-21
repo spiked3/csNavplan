@@ -34,18 +34,18 @@ namespace csNavplan
         public string PlanFilename { get { return _PlanFilename; } set { _PlanFilename = value; OnPropertyChanged(); } }
         string _PlanFilename;
 
-        public string ImageFileName { get { return _ImageFileName; } set { _ImageFileName = value; OnPropertyChanged(); RecalcAlignment(); } }
+        public string ImageFileName { get { return _ImageFileName; } set { _ImageFileName = value; OnPropertyChanged(); RecalcUtmRect(); } }
         string _ImageFileName;
 
-        // imagedata stores the Gps of image center used to fetch from google
+        // imagedata stores the Wgs84 of image center used to fetch from google        
         // AB is the target size 
-        public PlanPoint ImageData { get { return _ImageData; } set { _ImageData = value; OnPropertyChanged(); RecalcAlignment(); } }
+        public PlanPoint ImageData { get { return _ImageData; } set { _ImageData = value; OnPropertyChanged(); RecalcUtmRect(); } }
         PlanPoint _ImageData = new PlanPoint { PointName = "Image" };
-        public PlanPoint Align1 { get { return _Align1; } set { _Align1 = value; OnPropertyChanged(); RecalcAlignment(); } }
+        public PlanPoint Align1 { get { return _Align1; } set { _Align1 = value; OnPropertyChanged(); RecalcUtmRect(); } }
         PlanPoint _Align1 = new PlanPoint { PointName = "Align1" };
-        public PlanPoint Align2 { get { return _Align2; } set { _Align2 = value; OnPropertyChanged(); RecalcAlignment(); } }
+        public PlanPoint Align2 { get { return _Align2; } set { _Align2 = value; OnPropertyChanged(); RecalcUtmRect(); } }
         PlanPoint _Align2 = new PlanPoint { PointName = "Align2" };
-        public PlanPoint Origin { get { return _Origin; } set { _Origin = value; OnPropertyChanged(); RecalcAlignment(); } }
+        public PlanPoint Origin { get { return _Origin; } set { _Origin = value; OnPropertyChanged(); RecalcUtmRect(); } }
         PlanPoint _Origin = new PlanPoint { AB = new Point(50, 50), XY = new Point(0, 0), PointName = "Origin" };   // default middle
 
         public WaypointCollection Waypoints { get { return _Waypoints; } set { _Waypoints = value; OnPropertyChanged(); } }
@@ -56,10 +56,15 @@ namespace csNavplan
         [JsonIgnore]
         public Brush BackgroundBrush;
 
-        [JsonIgnore]
-        public Rect ImageUtmRect { get { return _ImageUtmRect; } set { _ImageUtmRect = value; OnPropertyChanged(); } }
-        Rect _ImageUtmRect; 
-        
+        public double UtmLeft { get { return _UtmLeft; } set { _UtmLeft = value; OnPropertyChanged(); } }
+        double _UtmLeft;
+        public double UtmTop { get { return _UtmTop; } set { _UtmTop = value; OnPropertyChanged(); } }
+        double _UtmTop;
+        public double UtmWidth { get { return _UtmWidth; } set { _UtmWidth = value; OnPropertyChanged(); } }
+        double _UtmWidth;
+        public double UtmHeight { get { return _UtmHeight; } set { _UtmHeight = value; OnPropertyChanged(); } }
+        double _UtmHeight; 
+
         string LastGoogleMapUri;        // hack
         public int GridDivisions = 10;      // todo 
 
@@ -76,13 +81,13 @@ namespace csNavplan
 
         public Utm Pct2Utm(Point a)
         {
-            return new Utm { Easting = ImageUtmRect.X + (a.X * ImageUtmRect.Width),
-                Northing = ImageUtmRect.Y + (a.Y * ImageUtmRect.Height), Zone = "10T" };  // hack hardcoded zone
+            return new Utm { Easting = UtmLeft + (a.X * UtmWidth),
+                Northing = UtmTop + (a.Y * UtmHeight), Zone = "10T" };  // hack hardcoded zone
         }
 
         internal Point Utm2Local(Utm utm)
         {
-            return new Point(utm.Easting - Origin.UtmCoord.Easting, utm.Northing - Origin.UtmCoord.Northing);
+            return new Point(utm.Easting - Origin.Utm.Easting, utm.Northing - Origin.Utm.Northing);
         }
 
         public Point Pct2Local(Point a)
@@ -90,25 +95,37 @@ namespace csNavplan
             return Utm2Local(Pct2Utm(a));
         }
 
-        public void RecalcAlignment()
+        public void RecalcUtmRect()
         {
-            // todo so the problem is when an origin point is set it depends on current UtmRect to determine its Utm, but UtmRect depends on Utm of origin
-            Utm middleUtm = Utm.FromLonLat(ImageData.GpsCoord.X, ImageData.GpsCoord.X);
+            System.Diagnostics.Trace.WriteLine($"Plan::RecalcUtmRect");
+            Utm middleUtm = Utm.FromWgs84(ImageData.Wgs84);
 
-            double utmDistanceBetweenAlignsX = Math.Abs(Align2.UtmCoord.Easting - Align1.UtmCoord.Easting);
+            double utmDistanceBetweenAlignsX = Math.Abs(Align2.Utm.Easting - Align1.Utm.Easting);
             double pctDistanceBetweenAlignsX = Math.Abs(Align2.AB.X - Align1.AB.X);
-            double utmImageWidthX = 1.0 / pctDistanceBetweenAlignsX * utmDistanceBetweenAlignsX;
+            UtmWidth = 1.0 / pctDistanceBetweenAlignsX * utmDistanceBetweenAlignsX;
 
-            double utmDistanceBetweenAlignsY = Math.Abs(Align2.UtmCoord.Northing - Align1.UtmCoord.Northing);
+            double utmDistanceBetweenAlignsY = Math.Abs(Align2.Utm.Northing - Align1.Utm.Northing);
             double pctDistanceBetweenAlignsY = Math.Abs(Align2.AB.Y - Align1.AB.Y);
-            double utmImageWidthY = 1.0 / pctDistanceBetweenAlignsY * utmDistanceBetweenAlignsY;
+            UtmHeight = 1.0 / pctDistanceBetweenAlignsY * utmDistanceBetweenAlignsY;
 
-            //double left = Origin.UtmCoord.Easting - (Origin.AB.X * utmImageWidthX);
-            //double top = Origin.UtmCoord.Northing - (Origin.AB.Y * utmImageWidthY);
-            double left = middleUtm.Easting - (utmImageWidthX / 2);
-            double top = middleUtm.Northing - (utmImageWidthY / 2);
+            UtmLeft = middleUtm.Easting - (UtmWidth / 2);
+            UtmTop = middleUtm.Northing - (UtmHeight / 2);
 
-            ImageUtmRect = new Rect(left, top, utmImageWidthX, utmImageWidthY);
+            RecalcOrigin();
+        }
+
+        internal void RecalcOrigin()
+        {
+            System.Diagnostics.Trace.WriteLine($"Plan::RecalcOrigin");
+
+            var u = new Utm
+            {
+                Easting = UtmLeft + (Origin.AB.X * UtmWidth),
+                Northing = UtmTop + (Origin.AB.Y * UtmHeight),
+                Zone = "10T"
+            };   // hack hardcoded zone
+
+            Origin.Wgs84 = u.AsWgs84();
         }
 
         public void RenderBackground(DrawingContext dc, PlanCanvas pc)
@@ -117,19 +134,20 @@ namespace csNavplan
             if (BackgroundBrush == null)
             {
                 ImageData.AB = new Point(pc.ActualWidth, pc.ActualHeight);
+
                 if (ImageFileName?.Length > 0)
                 {
                     BackgroundBrush = new ImageBrush(new BitmapImage(new Uri(ImageFileName)));
                     MainWindow.Status = "Loaded local Image for background";
                 }
-                else if (ImageData.GpsCoord.X + ImageData.GpsCoord.X > 0)
+                else if (Math.Abs(ImageData.Wgs84.Longitude) + Math.Abs(ImageData.Wgs84.Latitude) > 0)
                 {
                     int zoom = (int)ImageData.XY.X; // todo not the best UI 
                     ImageFileName = ""; // indicates we did not load an image from disk
 
                     // https://groups.google.com/forum/#!topic/google-maps-js-api-v3/hDRO4oHVSeM
                     LastGoogleMapUri = "https://maps.googleapis.com/maps/api/staticmap?maptype=satellite&" +
-                        $"center={ImageData.GpsCoord.X},{ImageData.GpsCoord.Y}&" +
+                        $"center={ImageData.Wgs84.Latitude},{ImageData.Wgs84.Longitude}&" +
                         $"size={(int)ImageData.AB.X}x{(int)ImageData.AB.Y}&" +
                         $"zoom={zoom}&" +
                         $"key={API_KEY}";
@@ -161,10 +179,10 @@ namespace csNavplan
                 Waypoints[i].Sequence = i+1;                        
         }
 
-        public void Save()
+        public void Save(Window owner)
         {
             if (string.IsNullOrEmpty(PlanFilename))
-                SaveAs();
+                SaveAs(owner);
             else
             {
                 IsDirty = false;
@@ -172,15 +190,17 @@ namespace csNavplan
                 File.WriteAllText(PlanFilename, planString);
             }
         }
-        public void SaveAs()
+
+        public void SaveAs(Window owner)
         {
-            SaveFileDialog d = new SaveFileDialog { Filter = "XML Files|*.xml|All Files|*.*", DefaultExt = "xml" };
-            if (d.ShowDialog() ?? false)
+            SaveFileDialog d = new SaveFileDialog { Filter = "XML Files|*.xml|All Files|*.*", DefaultExt = "xml" };            
+            if (d.ShowDialog(owner) ?? false)
             {
                 PlanFilename = d.FileName;
-                Save();
+                Save(owner);
             }
         }
+
         public static Plan Load(string filename)
         {
             Plan p = null;
@@ -203,14 +223,14 @@ namespace csNavplan
             return p;
         }
 
-        internal string GetNavXml(float initialHeading)
+        internal string GetNavCode(float initialHeading)
         {
             // todo someday maybe some sort of templates
             StringBuilder b = new StringBuilder();
             b.AppendLine("Pilot = Pilot.Factory(\"192.168.42.1\");");
             b.AppendLine("Pilot.OnPilotReceive += Pilot_OnReceive;");
-            b.AppendLine($"Send(new {{ Cmd = \"RESET\", Hdg = {initialHeading:F1} }});");
             b.AppendLine("Send(new { Cmd = \"CONFIG\", Geom = new float[] { 336.2F, 450F } });");
+            b.AppendLine($"Send(new {{ Cmd = \"RESET\", Hdg = {initialHeading:F1} }});");
             b.AppendLine("Send(new { Cmd = \"ESC\", Value = 1 });");
             foreach (Waypoint w in Waypoints)
             {

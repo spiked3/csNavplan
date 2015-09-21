@@ -7,6 +7,7 @@
              mc:Ignorable="d" >
         <UserControl.Resources>
             <local:UtmConverter x:Key="UtmConverter" />
+            <local:Wgs84Converter x:Key="Wgs84Converter" />
         </UserControl.Resources>
     
     <Grid Background="White">
@@ -41,13 +42,13 @@
 
         <TextBlock Text="Image(pct)" Grid.Row="1" />
         <TextBlock Text="Local(XY)" Grid.Row="2" />
-        <TextBlock Text="GPS" Grid.Row="3" />
+        <TextBlock Text="Wgs84" Grid.Row="3" />
         <TextBlock Text="UTM" Grid.Row="4" />
 
         <TextBox Grid.Row="1" Text="{Binding AB,StringFormat={}{0:F3}}" Grid.Column="1" />
         <TextBox Grid.Row="2" Text="{Binding XY,StringFormat={}{0:F3}}" Grid.Column="1" />
-        <TextBox Grid.Row="3" Text="{Binding GpsCoord,StringFormat={}{0:F6}}" Grid.Column="1" TextChanged="Gps_TextChanged" />
-        <TextBox Grid.Row="4" Text="{Binding UtmCoord,StringFormat={}{0:F6},Converter={StaticResource UtmConverter}}" Grid.Column="1" TextChanged="Utm_TextChanged" />
+        <TextBox Grid.Row="3" Text="{Binding Wgs84,StringFormat={}{0:F6},Converter={StaticResource Wgs84Converter}}" Grid.Column="1" TextChanged="Gps_TextChanged" />
+        <TextBox Grid.Row="4" Text="{Binding Utm,StringFormat={}{0:F6},Converter={StaticResource UtmConverter}}" Grid.Column="1" TextChanged="Utm_TextChanged" />
 
     </Grid>
 </UserControl>

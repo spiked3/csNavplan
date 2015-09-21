@@ -119,6 +119,7 @@
     <Compile Include="WayPointCRUD.xaml.cs">
       <DependentUpon>WayPointCRUD.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Wgs84.cs" />
     <Page Include="AlignPoint.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

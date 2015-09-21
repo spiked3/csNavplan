@@ -37,13 +37,13 @@ namespace csNavplan
         Point _AB = new Point(0,0);
 
         // GPS is longitude and lattitude - if null it has NOT been entered, use UTM as local coordinates
-        public Point GpsCoord { get { return _GpsCoord; } set { _GpsCoord = value; OnPropertyChanged(); } }
-        Point _GpsCoord;
+        public Wgs84 Wgs84 { get { return _Wgs84; } set { _Wgs84 = value; OnPropertyChanged(); } }
+        Wgs84 _Wgs84 = new Wgs84();
 
         // UTM is computed or designated coordinates in meters
         // if GPS is entered, UTM is computed, if manually entered it is left alone as basis for local coordinates
-        public Utm UtmCoord { get { return _UtmCoord; } set { _UtmCoord = value; OnPropertyChanged(); } }
-        Utm _UtmCoord = new Utm(); 
+        public Utm Utm { get { return _Utm; } set { _Utm = value; OnPropertyChanged(); } }
+        Utm _Utm = new Utm(); 
 
         // for visuals
         public string PointName { get { return _PointName; } set { _PointName = value; OnPropertyChanged(); } }

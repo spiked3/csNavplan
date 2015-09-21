@@ -46,18 +46,18 @@ namespace csNavplan
         public Plan Plan
         {
             get { return (Plan)GetValue(PlanProperty); }
-            set { value?.RecalcAlignment(); SetValue(PlanProperty, value); }
+            set { value?.RecalcUtmRect(); SetValue(PlanProperty, value); }
         }
         public static readonly DependencyProperty PlanProperty =
             DependencyProperty.Register("Plan", typeof(Plan), typeof(MainWindow));
 
-        public Point MouseGps
+        public Wgs84 MouseGps
         {
-            get { return (Point)GetValue(MouseGpsProperty); }
+            get { return (Wgs84)GetValue(MouseGpsProperty); }
             set { SetValue(MouseGpsProperty, value); }
         }
         public static readonly DependencyProperty MouseGpsProperty =
-            DependencyProperty.Register("MouseGps", typeof(Point), typeof(MainWindow), new PropertyMetadata(new Point(0,0)));
+            DependencyProperty.Register("MouseGps", typeof(Wgs84), typeof(MainWindow));
 
         public Utm MouseUtm
         {
@@ -134,7 +134,7 @@ namespace csNavplan
                     return;
                 }
                 if (rc == MessageBoxResult.Yes)
-                    Plan.Save();
+                    Plan.Save(this);
             }
 
             if (Plan.PlanFilename?.Length > 0)
@@ -178,31 +178,30 @@ namespace csNavplan
 
         private void MainWindow_PlanChanged(object sender, RoutedEventArgs e)
         {
-            Plan.RecalcAlignment();
-            var a = Plan.Align1.UtmCoord.Easting - Plan.Align2.UtmCoord.Easting;
-            var b = Plan.Align1.UtmCoord.Northing - Plan.Align2.UtmCoord.Northing;
+            var a = Plan.Align1.Utm.Easting - Plan.Align2.Utm.Easting;
+            var b = Plan.Align1.Utm.Northing - Plan.Align2.Utm.Northing;
             AlignUtmDistance = Math.Sqrt((a * a) + (b * b));
 
+            // uncomment this to see it in Gps - seems to be a bit more accurate, but Utm is within 1/3 meter
+            //AlignUtmDistance = gps2m(Plan.Align1.GpsCoord.X, Plan.Align1.GpsCoord.Y, Plan.Align2.GpsCoord.X, Plan.Align2.GpsCoord.Y);
             grid1.InvalidateVisual();
         }
 
-        /* seen this on the internet http://www.anddev.org/viewtopic.php?p=20195#20195
-        private double gps2m(float lat_a, float lng_a, float lat_b, float lng_b) {
-            float pk = (float) (180/3.14169);
+        private double gps2m(double lat_a, double lng_a, double lat_b, double lng_b)
+        {
+            double pk = 180.0 / Math.PI;
+            double a1 = lat_a / pk;
+            double a2 = lng_a / pk;
+            double b1 = lat_b / pk;
+            double b2 = lng_b / pk;
 
-            float a1 = lat_a / pk;
-            float a2 = lng_a / pk;
-            float b1 = lat_b / pk;
-            float b2 = lng_b / pk;
+            double t1 = Math.Cos(a1) * Math.Cos(a2) * Math.Cos(b1) * Math.Cos(b2);
+            double t2 = Math.Cos(a1) * Math.Sin(a2) * Math.Cos(b1) * Math.Sin(b2);
+            double t3 = Math.Sin(a1) * Math.Sin(b1);
+            double tt = Math.Acos(t1 + t2 + t3);
 
-            float t1 = FloatMath.cos(a1)*FloatMath.cos(a2)*FloatMath.cos(b1)*FloatMath.cos(b2);
-            float t2 = FloatMath.cos(a1)*FloatMath.sin(a2)*FloatMath.cos(b1)*FloatMath.sin(b2);
-            float t3 = FloatMath.sin(a1)*FloatMath.sin(b1);
-            double tt = Math.acos(t1 + t2 + t3);
-
-            return 6366000*tt;
+            return 6366000 * tt;
         }
-        */
 
         public event RoutedEventHandler PlanChanged
         {
@@ -217,14 +216,14 @@ namespace csNavplan
         private void Align1_Click(object sender, RoutedEventArgs e)
         {
             Plan.Align1.AB = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
-            Plan.RecalcAlignment();
+            Plan.RecalcUtmRect();
             grid1.InvalidateVisual();
         }
 
         private void Align2_Click(object sender, RoutedEventArgs e)
         {
             Plan.Align2.AB = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
-            Plan.RecalcAlignment();
+            Plan.RecalcUtmRect();
             grid1.InvalidateVisual();
         }
 
@@ -232,9 +231,8 @@ namespace csNavplan
         {
             Plan.Origin.XY = new Point(0, 0);
             Plan.Origin.AB = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
-            Plan.Origin.UtmCoord = Plan.Pct2Utm(Plan.Origin.AB);
-            Plan.Origin.GpsCoord = Plan.Origin.UtmCoord.ToLonLat();
-            Plan.RecalcAlignment();
+
+            Plan.RecalcOrigin();
             grid1.InvalidateVisual();
         }
 
@@ -271,7 +269,7 @@ namespace csNavplan
             MouseXY = p;
             MouseUtm = Plan.Pct2Utm(MousePct);
             MouseLocal = Plan.Utm2Local(MouseUtm);
-            MouseGps = MouseUtm.ToLonLat();
+            MouseGps = MouseUtm.AsWgs84();
 
             if (mouseDragStarted)
             {
@@ -283,15 +281,10 @@ namespace csNavplan
             }
         }
 
-        private void Exit_Click(object sender, RoutedEventArgs e)
-        {
-            Close();
-        }
-
         private void ClearImage_Click(object sender, RoutedEventArgs e)
         {
             Plan.ImageFileName = "";
-            Plan.ImageData.GpsCoord = new Point(0, 0);
+            Plan.ImageData.Wgs84 = new Wgs84(); 
             Plan.BackgroundBrush = null;
             grid1.InvalidateVisual();
         }
@@ -324,14 +317,9 @@ namespace csNavplan
             grid1.InvalidateVisual();
         }
 
-        void Save_Click(object sender, RoutedEventArgs e)
-        {
-            Plan.Save();
-        }
-
         void SaveAs_Click(object sender, RoutedEventArgs e)
         {
-            Plan.SaveAs();
+            Plan.SaveAs(this);
             WindowTitle = $"Navigation Planner, {Plan.PlanFilename}{(Plan.IsDirty ? '*' : ' ')}";
         }
 
@@ -373,12 +361,26 @@ namespace csNavplan
 
         private void Test_Click(object sender, RoutedEventArgs e)
         {
+            var w = new Wgs84 { Latitude = -122.3510883, Longitude = 47.6204584 };
+            var u = Utm.FromWgs84(w);
+
             System.Diagnostics.Debugger.Break();
         }
 
         private void PlanToClipboard_Click(object sender, RoutedEventArgs e)
         {
-            Clipboard.SetText(Plan.GetNavXml(RulerHeading));
+            Clipboard.SetText(Plan.GetNavCode(RulerHeading));
+        }
+
+        private void CommandBinding_Save(object sender, ExecutedRoutedEventArgs e)
+        {
+            Plan.Save(this);
+            Status = "Saved";
+        }
+
+        private void CommandBinding_Close(object sender, ExecutedRoutedEventArgs e)
+        {
+            Close();
         }
 
         private void Color_Click(object sender, RoutedEventArgs e)

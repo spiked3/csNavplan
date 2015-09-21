@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -10,34 +12,50 @@ using System.Windows.Data;
 namespace csNavplan
 {
     // you can verify this with http://home.hiwaay.net/~taylorc/toolbox/geography/geoutm.html
-
-    public class Utm
+    public class Utm : INotifyPropertyChanged
     {
-        const double deg2rad = Math.PI / 180.0;
-        public string Zone { get; set; }
-        public double Easting { get; set; }
-        public double Northing { get; set; }
+        #region INotifyPropertyChanged
 
-        static public Utm FromLonLat(double LonDeg, double LatDeg)
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        public void OnPropertyChanged([CallerMemberName] String T = "")
+        {
+            if (PropertyChanged != null)
+                PropertyChanged(this, new PropertyChangedEventArgs(T));
+        }
+
+        #endregion
+
+        const double deg2rad = Math.PI / 180.0;
+
+        public string Zone { get { return _Zone; } set { _Zone = value; OnPropertyChanged(); } }
+        string _Zone = "";
+        public double Easting { get { return _Easting; } set { _Easting = value; OnPropertyChanged(); } }
+        double _Easting = 0;
+        public double Northing { get { return _Northing; } set { _Northing = value; OnPropertyChanged(); } }
+        double _Northing = 0;
+
+        static public Utm FromWgs84(Wgs84 w)
         {
             Utm u = new Utm();
+            if (w == null) return u;
             const double a = 6378137; //WGS84
             const double eccSquared = 0.00669438; //WGS84
             const double k0 = 0.9996;
 
             //Make sure the longitude is between -180.00 .. 179.9
-            double LongTemp = (LonDeg + 180) - ((int)((LonDeg + 180) / 360)) * 360 - 180; // -180.00 .. 179.9;
+            double LongTemp = (w.Longitude + 180) - ((int)((w.Longitude + 180) / 360)) * 360 - 180; // -180.00 .. 179.9;
 
-            double LatRad = LatDeg * deg2rad;
+            double LatRad = w.Latitude * deg2rad;
             double LongRad = LongTemp * deg2rad;
 
             int ZoneNumber = ((int)((LongTemp + 180) / 6)) + 1;
 
-            if (LatDeg >= 56.0 && LatDeg < 64.0 && LongTemp >= 3.0 && LongTemp < 12.0)
+            if (w.Latitude >= 56.0 && w.Latitude < 64.0 && LongTemp >= 3.0 && LongTemp < 12.0)
                 ZoneNumber = 32;
 
             // Special zones for Svalbard
-            if (LatDeg >= 72.0 && LatDeg < 84.0)
+            if (w.Latitude >= 72.0 && w.Latitude < 84.0)
             {
                 if (LongTemp >= 0.0 && LongTemp < 9.0) ZoneNumber = 31;
                 else if (LongTemp >= 9.0 && LongTemp < 21.0) ZoneNumber = 33;
@@ -48,7 +66,7 @@ namespace csNavplan
             double LongOriginRad = LongOrigin * deg2rad;
 
             //compute the UTM Zone from the latitude and longitude
-            u.Zone = ZoneNumber.ToString() + UTMLetterDesignator(LatDeg);
+            u.Zone = ZoneNumber.ToString() + UTMLetterDesignator(w.Latitude);
 
             const double eccPrimeSquared = (eccSquared) / (1 - eccSquared);
 
@@ -67,10 +85,15 @@ namespace csNavplan
 
             u.Northing = k0 * (M + N * Math.Tan(LatRad) * (A * A / 2 + (5 - T + 9 * C + 4 * C * C) * A * A * A * A / 24
                 + (61 - 58 * T + T * T + 600 * C - 330 * eccPrimeSquared) * A * A * A * A * A * A / 720));
-            if (LatDeg < 0)
+            if (w.Latitude < 0)
                 u.Northing += 10000000.0; //10000000 meter offset for southern hemisphere
 
             return u;
+        }
+
+        public Wgs84 AsWgs84()
+        {
+            return Wgs84.FromUtm(this);
         }
 
         static char UTMLetterDesignator(double Lat)
@@ -98,52 +121,6 @@ namespace csNavplan
             else if ((-72 > Lat) && (Lat >= -80)) LetterDesignator = 'C';
             else LetterDesignator = 'Z'; //Latitude is outside the UTM limits
             return LetterDesignator;
-        }
-
-        // todo this needs to be verified and ATM I think is wrong, 
-        //   todo may have something to do with the zone string format it wants
-        public Point ToLonLat()
-        {
-            Point p_out = new Point(0, 0);  // x = longitude, y = latitude
-
-            bool isNorthHemisphere = Zone.Last() >= 'N';
-
-            var diflat = -0.00066286966871111111111111111111111111;
-            var diflon = -0.0003868060578;
-
-            var zone = int.Parse(Zone.Remove(Zone.Length - 1));
-            var c_sa = 6378137.000000;
-            var c_sb = 6356752.314245;
-            var e2 = Math.Pow((Math.Pow(c_sa, 2) - Math.Pow(c_sb, 2)), 0.5) / c_sb;
-            var e2cuadrada = Math.Pow(e2, 2);
-            var c = Math.Pow(c_sa, 2) / c_sb;
-            var x = Easting - 500000;
-            var y = isNorthHemisphere ? Northing : Northing - 10000000;
-
-            var s = ((zone * 6.0) - 183.0);
-            var lat = y / (c_sa * 0.9996);
-            var v = (c / Math.Pow(1 + (e2cuadrada * Math.Pow(Math.Cos(lat), 2)), 0.5)) * 0.9996;
-            var a = x / v;
-            var a1 = Math.Sin(2 * lat);
-            var a2 = a1 * Math.Pow((Math.Cos(lat)), 2);
-            var j2 = lat + (a1 / 2.0);
-            var j4 = ((3 * j2) + a2) / 4.0;
-            var j6 = ((5 * j4) + Math.Pow(a2 * (Math.Cos(lat)), 2)) / 3.0;
-            var alfa = (3.0 / 4.0) * e2cuadrada;
-            var beta = (5.0 / 3.0) * Math.Pow(alfa, 2);
-            var gama = (35.0 / 27.0) * Math.Pow(alfa, 3);
-            var bm = 0.9996 * c * (lat - alfa * j2 + beta * j4 - gama * j6);
-            var b = (y - bm) / v;
-            var epsi = ((e2cuadrada * Math.Pow(a, 2)) / 2.0) * Math.Pow((Math.Cos(lat)), 2);
-            var eps = a * (1 - (epsi / 3.0));
-            var nab = (b * (1 - epsi)) + lat;
-            var senoheps = (Math.Exp(eps) - Math.Exp(-eps)) / 2.0;
-            var delt = Math.Atan(senoheps / (Math.Cos(nab)));
-            var tao = Math.Atan(Math.Cos(delt) * Math.Tan(nab));
-
-            p_out.Y = ((delt * (180.0 / Math.PI)) + s) + diflon;
-            p_out.X = ((lat + (1 + e2cuadrada * Math.Pow(Math.Cos(lat), 2) - (3.0 / 2.0) * e2cuadrada * Math.Sin(lat) * Math.Cos(lat) * (tao - lat)) * (tao - lat)) * (180.0 / Math.PI)) + diflat;
-            return p_out;
         }
 
         public override string ToString()
@@ -182,3 +159,4 @@ namespace csNavplan
         }
     }
 }
+

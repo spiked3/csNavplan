@@ -8,21 +8,28 @@
         mc:Ignorable="d"
         Title="{Binding WindowTitle}"
         DataContext="{Binding RelativeSource={RelativeSource Self}}" Closing="Window_Closing" Loaded="Window_Loaded" d:DesignWidth="1046" d:DesignHeight="857" >
+    <Window.CommandBindings>
+        <CommandBinding Command="Save" Executed="CommandBinding_Save" />
+        <CommandBinding Command="Close" Executed="CommandBinding_Close"  />
+    </Window.CommandBindings>
+    <Window.InputBindings>
+            <KeyBinding Key="S" Modifiers="Control" Command="Save"/>
+            <KeyBinding Key="X" Modifiers="Control" Command="Close"/>
+    </Window.InputBindings>
     <DockPanel LastChildFill="True">
 
         <Menu DockPanel.Dock="Top" Margin="4" >
             <MenuItem Header="_File" >
                 <MenuItem Header="_New" Click="New_Click"  />
                 <MenuItem Header="_Open ..." Click="Open_Click" />
-                <MenuItem Header="_Save" Click="Save_Click"/>
+                <MenuItem Header="_Save" Command="Save" />
                 <MenuItem Header="Save _as ...." Click="SaveAs_Click"  />
+                <MenuItem Header="E_xit" Command="Close" />
                 <Separator />
                 <MenuItem Header="_Clear Image" Click="ClearImage_Click"  />
                 <MenuItem Header="_Import Image ..." Click="ImportImage_Click" />
                 <MenuItem Header="Sa_ve Image ..." Click="SaveImage_Click" />
                 <MenuItem Header="Color ..." Click="Color_Click" />
-                <Separator />
-                <MenuItem Header="E_xit" Click="Exit_Click" />
             </MenuItem>
             <MenuItem Header="Plan to Clipboard" Click="PlanToClipboard_Click" />
             <MenuItem >
@@ -85,7 +92,10 @@
             <StatusBarItem >
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="Utm Rect " />
-                    <TextBlock Text="{Binding Plan.ImageUtmRect,StringFormat={}{0:F5}}" />
+                    <TextBlock Text="{Binding Plan.UtmLeft,StringFormat={}{0:F5}}" Margin="4,0" />
+                    <TextBlock Text="{Binding Plan.UtmTop,StringFormat={}{0:F5}}" Margin="4,0" />
+                    <TextBlock Text="{Binding Plan.UtmWidth,StringFormat={}{0:F5}}" Margin="4,0" />
+                    <TextBlock Text="{Binding Plan.UtmHeight,StringFormat={}{0:F5}}" Margin="4,0" />
                 </StackPanel>
             </StatusBarItem>
             

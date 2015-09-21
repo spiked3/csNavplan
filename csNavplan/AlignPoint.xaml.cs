@@ -54,13 +54,7 @@ namespace csNavplan
             PlanPoint p = dt.Tag as PlanPoint;
             if (p == null) System.Diagnostics.Debugger.Break();
 
-            if (p.GpsCoord == null)
-            {
-                p.GpsCoord = new Point(0, 0);
-                return;
-            }
-
-            p.UtmCoord = Utm.FromLonLat(p.GpsCoord.Y, p.GpsCoord.X);
+            p.Utm = Utm.FromWgs84(p.Wgs84);
 
             p.dt.Stop();
             p.dt = null;            
