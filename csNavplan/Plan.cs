@@ -67,15 +67,23 @@ namespace csNavplan
 
         string LastGoogleMapUri;        // hack
 
-        public void SaveImage(string filename)
+        public bool SaveImage(string filename)
         {
-            JpegBitmapEncoder encoder = new JpegBitmapEncoder();
+            try
+            {
+                JpegBitmapEncoder encoder = new JpegBitmapEncoder();
 
-            encoder.Frames.Add(BitmapFrame.Create(new Uri(LastGoogleMapUri)));  // hack
+                encoder.Frames.Add(BitmapFrame.Create(new Uri(LastGoogleMapUri)));  // hack
 
-            using (var filestream = new FileStream(filename, FileMode.OpenOrCreate))
-                encoder.Save(filestream);
-            ImageFileName = filename;    // so it will load as image next run
+                using (var filestream = new FileStream(filename, FileMode.OpenOrCreate))
+                    encoder.Save(filestream);
+                ImageFileName = filename;    // so it will load as image next run
+                return true;
+            }
+            catch (Exception)
+            {
+            }
+            return false;
         }
 
         public Utm Pct2Utm(Point a)

@@ -1,4 +1,4 @@
-﻿<Window x:Class="csNavplan.MainWindow"
+﻿<RibbonWindow x:Class="csNavplan.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -8,43 +8,65 @@
         mc:Ignorable="d"
         Title="{Binding WindowTitle}"
         DataContext="{Binding RelativeSource={RelativeSource Self}}" Closing="Window_Closing" Loaded="Window_Loaded" d:DesignWidth="1046" d:DesignHeight="857" >
-    <Window.CommandBindings>
+
+    <RibbonWindow.CommandBindings>
         <CommandBinding Command="Save" Executed="CommandBinding_Save" />
         <CommandBinding Command="Close" Executed="CommandBinding_Close"  />
-    </Window.CommandBindings>
-    <Window.InputBindings>
-            <KeyBinding Key="S" Modifiers="Control" Command="Save"/>
-            <KeyBinding Key="X" Modifiers="Control" Command="Close"/>
-    </Window.InputBindings>
-    <DockPanel LastChildFill="True">
+    </RibbonWindow.CommandBindings>
 
-        <Menu DockPanel.Dock="Top" Margin="4" >
-            <MenuItem Header="_File" >
-                <MenuItem Header="_New" Click="New_Click"  />
-                <MenuItem Header="_Open ..." Click="Open_Click" />
-                <MenuItem Header="_Save" Command="Save" />
-                <MenuItem Header="Save _as ...." Click="SaveAs_Click"  />
-                <MenuItem Header="E_xit" Command="Close" />
-                <Separator />
-                <MenuItem Header="_Clear Image" Click="ClearImage_Click"  />
-                <MenuItem Header="_Import Image ..." Click="ImportImage_Click" />
-                <MenuItem Header="Sa_ve Image ..." Click="SaveImage_Click" />
-                <MenuItem Header="Color ..." Click="Color_Click" />
-            </MenuItem>
-            <MenuItem Header="Plan to Clipboard" Click="PlanToClipboard_Click" />
-            <MenuItem >
-                <MenuItem.Header>
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" >
-                        <TextBlock Text="Grid Spacing" Margin="8,0" />
-                        <ComboBox x:Name="gridSpacing1" >
-                            <ComboBoxItem>.1</ComboBoxItem>
-                            <ComboBoxItem>1</ComboBoxItem>
-                            <ComboBoxItem>10</ComboBoxItem>
-                        </ComboBox>
-                    </StackPanel>
-                </MenuItem.Header>
-            </MenuItem>
-        </Menu>
+    <RibbonWindow.InputBindings>
+        <KeyBinding Key="S" Modifiers="Control" Command="Save"/>
+        <KeyBinding Key="X" Modifiers="Control" Command="Close"/>
+    </RibbonWindow.InputBindings>
+
+    <DockPanel LastChildFill="True">
+        <Ribbon DockPanel.Dock="Top" SelectedItem="Main" >
+            <Ribbon.Resources>
+                <Style TargetType="Button" >
+                    <Setter Property="Width" Value="72" />
+                    <Setter Property="Margin" Value="4,8" />
+                </Style>
+            </Ribbon.Resources>
+            <Ribbon.QuickAccessToolBar>
+                <RibbonQuickAccessToolBar>
+                    <!--<RibbonButton Content="Test"  />-->
+                </RibbonQuickAccessToolBar>
+            </Ribbon.QuickAccessToolBar>
+            <Ribbon.ApplicationMenu>
+                <RibbonApplicationMenu>
+                    <RibbonApplicationMenuItem Header="_New" Click="New_Click"  />
+                    <RibbonApplicationMenuItem Header="_Open ..." Click="Open_Click" />
+                    <RibbonApplicationMenuItem Header="_Save" Command="Save" />
+                    <RibbonApplicationMenuItem Header="Save _as ...." Click="SaveAs_Click"  />
+                    <RibbonApplicationMenuItem Header="E_xit" Command="Close" />
+                    <RibbonSeparator />
+                    <RibbonApplicationMenuItem Header="_Clear Image" Click="ClearImage_Click"  />
+                    <RibbonApplicationMenuItem Header="_Import Image ..." Click="ImportImage_Click" />
+                    <RibbonApplicationMenuItem Header="Sa_ve Image ..." Click="SaveImage_Click" />
+                    <RibbonApplicationMenuItem Header="Color ..." Click="Color_Click" />
+                </RibbonApplicationMenu>
+            </Ribbon.ApplicationMenu>
+
+            <RibbonTab Header="Main">
+                <RibbonGroup Header="View">
+                    <RibbonButton Content="Plan to Clipboard" Click="PlanToClipboard_Click" />
+
+                    <!--<TextBlock Text="Grid Spacing" Margin="8,0" />-->
+                    <ComboBox Text="gridSpacing1" SelectedIndex="2" Width="64" >
+                        <ComboBoxItem>.1</ComboBoxItem>
+                        <ComboBoxItem>1</ComboBoxItem>
+                        <ComboBoxItem>10</ComboBoxItem>
+                    </ComboBox>
+
+                    <TextBlock Text="Zoom" Margin="8,0" />
+                    <Slider x:Name="zoom1" Minimum="1" Maximum="5" Width="72" />
+                </RibbonGroup>
+                <RibbonGroup Header="Temp" >                    
+                    <Button Content="Generate" Click="PlanToClipboard_Click" />
+                    <Button Content="OriginCalc" />
+                </RibbonGroup>
+            </RibbonTab>
+        </Ribbon>
 
         <StatusBar DockPanel.Dock="Bottom" >
             <StatusBarItem >
@@ -91,8 +113,8 @@
                     <TextBlock Text="{Binding RulerHeading,StringFormat={}{0:F1}}" />
                 </StackPanel>
             </StatusBarItem>
-            <Separator />           
-            
+            <Separator />
+
             <StatusBarItem HorizontalAlignment="Right" >
                 <TextBlock x:Name="StatusBarTextBlock" />
             </StatusBarItem>
@@ -115,13 +137,20 @@
             </StackPanel>
         </Expander>
 
-        <Grid >
+        <Grid ClipToBounds="True">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition />
                 <ColumnDefinition Width="220" />
             </Grid.ColumnDefinitions>
-            <local:PlanCanvas x:Name="grid1" Background="WhiteSmoke" AlignPointBrush="Yellow" Foreground="White" ClipToBounds="True"
-                          MouseRightButtonDown="grid1_MouseRightButtonDown" MouseMove="grid1_MouseMove" MouseLeftButtonDown="grid1_MouseLeftButtonDown" MouseLeftButtonUp="grid1_MouseLeftButtonUp" MouseLeave="grid1_MouseLeave" >
+            <local:PlanCanvas x:Name="grid1" Background="WhiteSmoke" AlignPointBrush="Yellow" Foreground="White" 
+                          MouseRightButtonDown="grid1_MouseRightButtonDown" MouseMove="grid1_MouseMove" MouseLeftButtonDown="grid1_MouseLeftButtonDown"
+                          MouseLeftButtonUp="grid1_MouseLeftButtonUp" MouseLeave="grid1_MouseLeave" 
+                              RenderTransformOrigin="0.5,0.5" MouseWheel="grid1_MouseWheel" >
+                <local:PlanCanvas.RenderTransform>
+                    <TransformGroup>
+                        <ScaleTransform ScaleX="{Binding Value,ElementName=zoom1}" ScaleY="{Binding Value,ElementName=zoom1}"/>
+                    </TransformGroup>
+                </local:PlanCanvas.RenderTransform>
                 <local:PlanCanvas.ContextMenu>
                     <ContextMenu>
                         <MenuItem Header="Align1" Click="Align1_Click" />
@@ -137,9 +166,10 @@
                     </ContextMenu>
                 </local:PlanCanvas.ContextMenu>
             </local:PlanCanvas>
+
             <local:WayPointCRUD DataContext="{Binding Plan}" Grid.Column="1" />
 
         </Grid>
 
     </DockPanel>
-</Window>
+</RibbonWindow>

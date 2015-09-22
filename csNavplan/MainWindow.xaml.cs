@@ -4,12 +4,13 @@ using System;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Ribbon;
 using System.Windows.Input;
 using System.Windows.Media;
 
 namespace csNavplan
 {
-    public partial class MainWindow : Window
+    public partial class MainWindow : RibbonWindow
     {
         public float RulerHeading
         {
@@ -267,6 +268,19 @@ namespace csNavplan
             }
         }
 
+        private void grid1_MouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (e.Delta > 0)
+                zoom1.Value -= 0.1;
+            else
+                zoom1.Value += 0.1;
+
+            // hack kinda kludgy but works kinda
+            grid1.RenderTransformOrigin = MousePct;
+
+            e.Handled = true;
+        }
+
         private void ClearImage_Click(object sender, RoutedEventArgs e)
         {
             Plan.ImageFileName = "";
@@ -328,7 +342,12 @@ namespace csNavplan
         {
             SaveFileDialog d = new SaveFileDialog { Filter = "JPG Files|*.jpg", DefaultExt = "jpg" };
             if (d.ShowDialog() ?? false)
-                Plan.SaveImage(d.FileName);
+            {
+                if (Plan.SaveImage(d.FileName))
+                    Status = "Image saved";
+                else
+                    Status = "Image save failed!";
+            }
         }
 
         private void Waypoint_Click(object sender, RoutedEventArgs e)
@@ -336,6 +355,7 @@ namespace csNavplan
             Waypoint wp = new Waypoint { isAction = false };
             wp.XY = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
             Plan.Waypoints.Add(wp);
+            Status = "Waypoint added";
         }
 
         private void ActionWaypoint_Click(object sender, RoutedEventArgs e)
@@ -343,10 +363,12 @@ namespace csNavplan
             Waypoint wp = new Waypoint { isAction = true };
             wp.XY = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
             Plan.Waypoints.Add(wp);
+            Status = "Action Waypoint added";
         }
 
         private void Test_Click(object sender, RoutedEventArgs e)
         {
+            Status = "Test_Click";
             var w = new Wgs84 { Latitude = -122.3510883, Longitude = 47.6204584 };
             var u = Utm.FromWgs84(w);
 
@@ -356,6 +378,7 @@ namespace csNavplan
         private void PlanToClipboard_Click(object sender, RoutedEventArgs e)
         {
             Clipboard.SetText(Plan.GetNavCode(RulerHeading));
+            Status = "Code pushed onto clipboard";
         }
 
         private void CommandBinding_Save(object sender, ExecutedRoutedEventArgs e)
