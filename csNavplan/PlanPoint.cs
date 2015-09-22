@@ -29,12 +29,12 @@ namespace csNavplan
         public static readonly Point PointZero = new Point(0, 0);
 
         // XY is local coordinates in meters
-        public Point XY { get { return _XY; } set { _XY.X = value.X; _XY.Y = value.Y; OnPropertyChanged(); } }
-        Point _XY = new Point(0,0);
+        public Point Local { get { return _Local; } set { _Local.X = value.X; _Local.Y = value.Y; OnPropertyChanged(); } }
+        Point _Local = new Point(0,0);
 
         // AB is pct point on image (arbitrary)
-        public Point AB { get { return _AB; } set { _AB.X = value.X; _AB.Y = value.Y; OnPropertyChanged(); } }
-        Point _AB = new Point(0,0);
+        public Point Pct { get { return _Pct; } set { _Pct.X = value.X; _Pct.Y = value.Y; OnPropertyChanged(); } }
+        Point _Pct = new Point(0,0);
 
         // GPS is longitude and lattitude - if null it has NOT been entered, use UTM as local coordinates
         public Wgs84 Wgs84 { get { return _Wgs84; } set { _Wgs84 = value; OnPropertyChanged(); } }

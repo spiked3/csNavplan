@@ -15,35 +15,6 @@ namespace csNavplan
         
     }
 
-    public class Waypoint : INotifyPropertyChanged
-    {
-        #region INotifyPropertyChanged
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        public void OnPropertyChanged([CallerMemberName] String T = "")
-        {
-            if (PropertyChanged != null)
-                PropertyChanged(this, new PropertyChangedEventArgs(T));
-        }
-
-        #endregion
-
-        // todo change isAction bool to wayPointType enum
-        // todo would be nice to set background color based on enum
-
-        public int Sequence { get { return _Sequence; } set { _Sequence = value; OnPropertyChanged(); } }
-        int _Sequence = 0;
-
-        public Point XY { get { return _XY; } set { _XY = value; OnPropertyChanged(); } }
-        Point _XY;
-
-        public bool isAction { get { return _isAction; } set { _isAction = value; OnPropertyChanged(); OnPropertyChanged("isActionString"); } }
-        bool _isAction = false; 
-
-        public string isActionString { get { return isAction ? "Action" : "";  } }
-    }
-
     public class SortableObservableCollection<T> : ObservableCollection<T>
     {
         public SortableObservableCollection(IEnumerable<T> collection) :

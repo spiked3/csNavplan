@@ -35,9 +35,12 @@
             <MenuItem >
                 <MenuItem.Header>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" >
-                        <TextBlock Text="Grid" Margin="8,0" />
-                        <Slider x:Name="slider1" Width="72" Minimum=".1" Maximum="10" Value="{Binding GridSpacing}" />
-                        <TextBlock Text="{Binding Value,ElementName=slider1}" Margin="8,0" />
+                        <TextBlock Text="Grid Spacing" Margin="8,0" />
+                        <ComboBox x:Name="gridSpacing1" >
+                            <ComboBoxItem>.1</ComboBoxItem>
+                            <ComboBoxItem>1</ComboBoxItem>
+                            <ComboBoxItem>10</ComboBoxItem>
+                        </ComboBox>
                     </StackPanel>
                 </MenuItem.Header>
             </MenuItem>
@@ -88,16 +91,7 @@
                     <TextBlock Text="{Binding RulerHeading,StringFormat={}{0:F1}}" />
                 </StackPanel>
             </StatusBarItem>
-            <Separator />
-            <StatusBarItem >
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="Utm Rect " />
-                    <TextBlock Text="{Binding Plan.UtmLeft,StringFormat={}{0:F5}}" Margin="4,0" />
-                    <TextBlock Text="{Binding Plan.UtmTop,StringFormat={}{0:F5}}" Margin="4,0" />
-                    <TextBlock Text="{Binding Plan.UtmWidth,StringFormat={}{0:F5}}" Margin="4,0" />
-                    <TextBlock Text="{Binding Plan.UtmHeight,StringFormat={}{0:F5}}" Margin="4,0" />
-                </StackPanel>
-            </StatusBarItem>
+            <Separator />           
             
             <StatusBarItem HorizontalAlignment="Right" >
                 <TextBlock x:Name="StatusBarTextBlock" />
@@ -126,7 +120,7 @@
                 <ColumnDefinition />
                 <ColumnDefinition Width="220" />
             </Grid.ColumnDefinitions>
-            <local:PlanCanvas x:Name="grid1" Background="WhiteSmoke" AlignPointBrush="Yellow" Foreground="White" 
+            <local:PlanCanvas x:Name="grid1" Background="WhiteSmoke" AlignPointBrush="Yellow" Foreground="White" ClipToBounds="True"
                           MouseRightButtonDown="grid1_MouseRightButtonDown" MouseMove="grid1_MouseMove" MouseLeftButtonDown="grid1_MouseLeftButtonDown" MouseLeftButtonUp="grid1_MouseLeftButtonUp" MouseLeave="grid1_MouseLeave" >
                 <local:PlanCanvas.ContextMenu>
                     <ContextMenu>

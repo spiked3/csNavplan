@@ -46,15 +46,10 @@ namespace csNavplan
         public PlanPoint Align2 { get { return _Align2; } set { _Align2 = value; OnPropertyChanged(); RecalcUtmRect(); } }
         PlanPoint _Align2 = new PlanPoint { PointName = "Align2" };
         public PlanPoint Origin { get { return _Origin; } set { _Origin = value; OnPropertyChanged(); RecalcUtmRect(); } }
-        PlanPoint _Origin = new PlanPoint { AB = new Point(50, 50), XY = new Point(0, 0), PointName = "Origin" };   // default middle
+        PlanPoint _Origin = new PlanPoint { Pct = new Point(50, 50), Local = new Point(0, 0), PointName = "Origin" };   // default middle
 
         public WaypointCollection Waypoints { get { return _Waypoints; } set { _Waypoints = value; OnPropertyChanged(); } }
-        WaypointCollection _Waypoints = new WaypointCollection(); 
-
-        static Pen gridPen = new Pen(Brushes.Gray, 1.0);
-
-        [JsonIgnore]
-        public Brush BackgroundBrush;
+        WaypointCollection _Waypoints = new WaypointCollection();
 
         public double UtmLeft { get { return _UtmLeft; } set { _UtmLeft = value; OnPropertyChanged(); } }
         double _UtmLeft;
@@ -63,10 +58,14 @@ namespace csNavplan
         public double UtmWidth { get { return _UtmWidth; } set { _UtmWidth = value; OnPropertyChanged(); } }
         double _UtmWidth;
         public double UtmHeight { get { return _UtmHeight; } set { _UtmHeight = value; OnPropertyChanged(); } }
-        double _UtmHeight; 
+        double _UtmHeight;
+
+        static Pen gridPen = new Pen(Brushes.Gray, 1.0);
+
+        [JsonIgnore]
+        public Brush BackgroundBrush;
 
         string LastGoogleMapUri;        // hack
-        public int GridDivisions = 10;      // todo 
 
         public void SaveImage(string filename)
         {
@@ -97,43 +96,45 @@ namespace csNavplan
 
         public void RecalcUtmRect()
         {
-            System.Diagnostics.Trace.WriteLine($"Plan::RecalcUtmRect");
             Utm middleUtm = Utm.FromWgs84(ImageData.Wgs84);
 
             double utmDistanceBetweenAlignsX = Math.Abs(Align2.Utm.Easting - Align1.Utm.Easting);
-            double pctDistanceBetweenAlignsX = Math.Abs(Align2.AB.X - Align1.AB.X);
+            double pctDistanceBetweenAlignsX = Math.Abs(Align2.Pct.X - Align1.Pct.X);
             UtmWidth = 1.0 / pctDistanceBetweenAlignsX * utmDistanceBetweenAlignsX;
 
             double utmDistanceBetweenAlignsY = Math.Abs(Align2.Utm.Northing - Align1.Utm.Northing);
-            double pctDistanceBetweenAlignsY = Math.Abs(Align2.AB.Y - Align1.AB.Y);
+            double pctDistanceBetweenAlignsY = Math.Abs(Align2.Pct.Y - Align1.Pct.Y);
             UtmHeight = 1.0 / pctDistanceBetweenAlignsY * utmDistanceBetweenAlignsY;
 
             UtmLeft = middleUtm.Easting - (UtmWidth / 2);
             UtmTop = middleUtm.Northing - (UtmHeight / 2);
-
-            RecalcOrigin();
+            var t = $"Plan::RecalcUtmRect = ({UtmLeft:F5}, {UtmTop:F5}, {UtmWidth:F3}, {UtmHeight:F3})";
+            MainWindow.Status = t;
+            System.Diagnostics.Trace.WriteLine(t);
         }
 
         internal void RecalcOrigin()
         {
-            System.Diagnostics.Trace.WriteLine($"Plan::RecalcOrigin");
-
-            var u = new Utm
+            // todo this is working, but needs to be manually triggered
+            // todo it would also be nice if origin entered via Wgs84 would trigger placement on map, but that would be true for any point
+            Origin.Utm = new Utm
             {
-                Easting = UtmLeft + (Origin.AB.X * UtmWidth),
-                Northing = UtmTop + (Origin.AB.Y * UtmHeight),
+                Easting = UtmLeft + (Origin.Pct.X * UtmWidth),
+                Northing = UtmTop + (Origin.Pct.Y * UtmHeight),
                 Zone = "10T"
             };   // hack hardcoded zone
 
-            Origin.Wgs84 = u.AsWgs84();
+            var t = $"Plan::RecalcOrigin = ({Origin.Utm})";
+            MainWindow.Status = t;
+            System.Diagnostics.Trace.WriteLine(t);
         }
 
-        public void RenderBackground(DrawingContext dc, PlanCanvas pc)
+        public void RenderBackground(DrawingContext dc, PlanCanvas pc, double gridSpacing)
         {
             // draw image, fetch from google if it has not been already fetched
             if (BackgroundBrush == null)
             {
-                ImageData.AB = new Point(pc.ActualWidth, pc.ActualHeight);
+                ImageData.Pct = new Point(pc.ActualWidth, pc.ActualHeight);
 
                 if (ImageFileName?.Length > 0)
                 {
@@ -142,13 +143,13 @@ namespace csNavplan
                 }
                 else if (Math.Abs(ImageData.Wgs84.Longitude) + Math.Abs(ImageData.Wgs84.Latitude) > 0)
                 {
-                    int zoom = (int)ImageData.XY.X; // todo not the best UI 
+                    int zoom = (int)ImageData.Local.X; // todo not the best UI 
                     ImageFileName = ""; // indicates we did not load an image from disk
 
                     // https://groups.google.com/forum/#!topic/google-maps-js-api-v3/hDRO4oHVSeM
                     LastGoogleMapUri = "https://maps.googleapis.com/maps/api/staticmap?maptype=satellite&" +
                         $"center={ImageData.Wgs84.Latitude},{ImageData.Wgs84.Longitude}&" +
-                        $"size={(int)ImageData.AB.X}x{(int)ImageData.AB.Y}&" +
+                        $"size={(int)ImageData.Pct.X}x{(int)ImageData.Pct.Y}&" +
                         $"zoom={zoom}&" +
                         $"key={API_KEY}";
 
@@ -164,14 +165,24 @@ namespace csNavplan
 
             dc.DrawRectangle(BackgroundBrush, null, new Rect(0, 0, pc.ActualWidth, pc.ActualHeight));
 
-            //---R
-            // todo should be fixed distance, eg draw 10 meter increments from origin
-            for (double x = 0, y = 0; x < pc.ActualWidth; x += pc.ActualWidth / GridDivisions, y += pc.ActualHeight / GridDivisions)
+            //---Y
+            var startX = Origin.Pct.X * pc.ActualWidth;
+            var startY = Origin.Pct.Y * pc.ActualHeight;
+
+            var oneMeterX = pc.ActualWidth / UtmWidth;
+            var oneMeterY = pc.ActualHeight / UtmHeight;
+
+            var reps = Math.Max(UtmWidth / gridSpacing, UtmHeight / gridSpacing);
+
+            for (int i=0; i < (int)(reps + 1); i++)
             {
-                dc.DrawLine(gridPen, new Point(x, 0), new Point(x, pc.ActualHeight));
-                dc.DrawLine(gridPen, new Point(0, y), new Point(pc.ActualWidth, y));
+                dc.DrawLine(gridPen, new Point(startX + (i * oneMeterX * gridSpacing), 0), new Point(startX + (i * oneMeterX * gridSpacing), pc.ActualHeight));
+                dc.DrawLine(gridPen, new Point(startX - (i * oneMeterX * gridSpacing), 0), new Point(startX - (i * oneMeterX * gridSpacing), pc.ActualHeight));
+
+                dc.DrawLine(gridPen, new Point(0, startY + (i * oneMeterY * gridSpacing)), new Point(pc.ActualWidth, startY + (i * oneMeterY * gridSpacing)));
+                dc.DrawLine(gridPen, new Point(0, startY - (i * oneMeterY * gridSpacing)), new Point(pc.ActualWidth, startY - (i * oneMeterY * gridSpacing)));
             }
-         }
+        }
 
         internal void ResetSequenceNumbers()
         {

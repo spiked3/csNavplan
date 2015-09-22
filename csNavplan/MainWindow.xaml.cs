@@ -164,6 +164,7 @@ namespace csNavplan
 
             PlanChanged += MainWindow_PlanChanged;
             WindowTitle = $"Navigation Planner, {Plan.PlanFilename}{(Plan.IsDirty ? '*' : ' ')}";
+
         }
 
         private void Plan_AlignmentChanged(object sender, EventArgs e)
@@ -182,25 +183,9 @@ namespace csNavplan
             var b = Plan.Align1.Utm.Northing - Plan.Align2.Utm.Northing;
             AlignUtmDistance = Math.Sqrt((a * a) + (b * b));
 
-            // uncomment this to see it in Gps - seems to be a bit more accurate, but Utm is within 1/3 meter
-            //AlignUtmDistance = gps2m(Plan.Align1.GpsCoord.X, Plan.Align1.GpsCoord.Y, Plan.Align2.GpsCoord.X, Plan.Align2.GpsCoord.Y);
+            // uncomment this to see it in Wgs84 - seems to be a bit more accurate, but Utm is within 1/3 meter
+            //AlignUtmDistance = Wgs84.gps2m(Plan.Align1.Wgs84.Latitude, Plan.Align1.Wgs84.Longitude, Plan.Align2.Wgs84.Latitude, Plan.Align2.Wgs84.Longitude);
             grid1.InvalidateVisual();
-        }
-
-        private double gps2m(double lat_a, double lng_a, double lat_b, double lng_b)
-        {
-            double pk = 180.0 / Math.PI;
-            double a1 = lat_a / pk;
-            double a2 = lng_a / pk;
-            double b1 = lat_b / pk;
-            double b2 = lng_b / pk;
-
-            double t1 = Math.Cos(a1) * Math.Cos(a2) * Math.Cos(b1) * Math.Cos(b2);
-            double t2 = Math.Cos(a1) * Math.Sin(a2) * Math.Cos(b1) * Math.Sin(b2);
-            double t3 = Math.Sin(a1) * Math.Sin(b1);
-            double tt = Math.Acos(t1 + t2 + t3);
-
-            return 6366000 * tt;
         }
 
         public event RoutedEventHandler PlanChanged
@@ -215,23 +200,24 @@ namespace csNavplan
 
         private void Align1_Click(object sender, RoutedEventArgs e)
         {
-            Plan.Align1.AB = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
+            Plan.Align1.Pct = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
             Plan.RecalcUtmRect();
+            Plan.RecalcOrigin();
             grid1.InvalidateVisual();
         }
 
         private void Align2_Click(object sender, RoutedEventArgs e)
         {
-            Plan.Align2.AB = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
+            Plan.Align2.Pct = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
             Plan.RecalcUtmRect();
+            Plan.RecalcOrigin();
             grid1.InvalidateVisual();
         }
 
         private void Origin_Click(object sender, RoutedEventArgs e)
         {
-            Plan.Origin.XY = new Point(0, 0);
-            Plan.Origin.AB = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
-
+            Plan.Origin.Local = new Point(0, 0);
+            Plan.Origin.Pct = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
             Plan.RecalcOrigin();
             grid1.InvalidateVisual();
         }

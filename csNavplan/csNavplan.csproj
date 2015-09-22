@@ -115,6 +115,7 @@
       <DependentUpon>Settings1.settings</DependentUpon>
     </Compile>
     <Compile Include="utm.cs" />
+    <Compile Include="Waypoint.cs" />
     <Compile Include="WaypointCollection.cs" />
     <Compile Include="WayPointCRUD.xaml.cs">
       <DependentUpon>WayPointCRUD.xaml</DependentUpon>

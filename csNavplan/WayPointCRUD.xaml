@@ -27,7 +27,9 @@
             <Button Content="Delete" Click="Delete_Click" />
             <Button Content="Renum" Click="Renum_Click" />
         </StackPanel>
-        <ListView x:Name="waypointListView1" ItemsSource="{Binding Waypoints}" Grid.Row="2" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto" >
+        <ListView x:Name="waypointListView1" ItemsSource="{Binding Waypoints}" Grid.Row="2" 
+                  ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                  HorizontalContentAlignment="Center">
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <DataTemplate.Triggers>
@@ -35,7 +37,7 @@
                             <Setter TargetName="waypoint1" Property="Grid.Background" Value="Pink" />
                         </DataTrigger>
                     </DataTemplate.Triggers>
-                    <Grid x:Name="waypoint1" Background="Beige" Width="192" >
+                    <Grid x:Name="waypoint1" Background="LightGray" Width="192" >
                         <Grid.RowDefinitions >
                             <RowDefinition />
                             <RowDefinition />
@@ -44,11 +46,12 @@
                             <ColumnDefinition />
                             <ColumnDefinition />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="{Binding Sequence}" />
+                        <TextBlock Text="{Binding Sequence}" HorizontalAlignment="Center" />
                         <CheckBox  IsChecked="{Binding isAction}" Grid.Column="1" >
                             <TextBlock Text="Action" />
                         </CheckBox>
-                        <TextBox Text="{Binding XY,StringFormat={}{0:F3}}" Grid.Row="1" Grid.ColumnSpan="2" />
+                        <TextBox Text="{Binding XY,StringFormat={}{0:F3}}" Grid.Row="1" Margin="2,1" />
+                        <TextBox Text="{Binding Local,StringFormat={}{0:F3}}" Grid.Row="1" Grid.Column="1" Margin="2,1" />
                     </Grid>
                 </DataTemplate>
             </ListView.ItemTemplate>

@@ -79,7 +79,8 @@ namespace csNavplan
             Plan plan = (DataContext as MainWindow).Plan;
             if (plan == null) return;
 
-            plan.RenderBackground(dc, this);
+            double gridSpacing = 10.0;
+            plan.RenderBackground(dc, this, gridSpacing);
 
             DrawPlanPoint(dc, plan.Origin);
             DrawPlanPoint(dc, plan.Align1);
@@ -120,7 +121,7 @@ namespace csNavplan
         {
             // AB is the pctg point, XY is the local Coordinates
             FormattedText ft;
-            Point tp, p = Pct2CanvasPoint(pp.AB);
+            Point tp, p = Pct2CanvasPoint(pp.Pct);
 
             dc.DrawEllipse(AlignPointBrush, null, p, markerRadius, markerRadius);
 
