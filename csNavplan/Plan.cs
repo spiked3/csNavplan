@@ -34,18 +34,18 @@ namespace csNavplan
         public string PlanFilename { get { return _PlanFilename; } set { _PlanFilename = value; OnPropertyChanged(); } }
         string _PlanFilename;
 
-        public string ImageFileName { get { return _ImageFileName; } set { _ImageFileName = value; OnPropertyChanged(); RecalcUtmRect(); } }
+        public string ImageFileName { get { return _ImageFileName; } set { _ImageFileName = value; OnPropertyChanged();  } }
         string _ImageFileName;
 
         // imagedata stores the Wgs84 of image center used to fetch from google        
         // AB is the target size 
-        public PlanPoint ImageData { get { return _ImageData; } set { _ImageData = value; OnPropertyChanged(); RecalcUtmRect(); } }
+        public PlanPoint ImageData { get { return _ImageData; } set { _ImageData = value; OnPropertyChanged(); } }
         PlanPoint _ImageData = new PlanPoint { PointName = "Image" };
-        public PlanPoint Align1 { get { return _Align1; } set { _Align1 = value; OnPropertyChanged(); RecalcUtmRect(); } }
+        public PlanPoint Align1 { get { return _Align1; } set { _Align1 = value; OnPropertyChanged();  } }
         PlanPoint _Align1 = new PlanPoint { PointName = "Align1" };
-        public PlanPoint Align2 { get { return _Align2; } set { _Align2 = value; OnPropertyChanged(); RecalcUtmRect(); } }
+        public PlanPoint Align2 { get { return _Align2; } set { _Align2 = value; OnPropertyChanged(); } }
         PlanPoint _Align2 = new PlanPoint { PointName = "Align2" };
-        public PlanPoint Origin { get { return _Origin; } set { _Origin = value; OnPropertyChanged(); RecalcUtmRect(); } }
+        public PlanPoint Origin { get { return _Origin; } set { _Origin = value; OnPropertyChanged(); } }
         PlanPoint _Origin = new PlanPoint { Pct = new Point(50, 50), Local = new Point(0, 0), PointName = "Origin" };   // default middle
 
         public WaypointCollection Waypoints { get { return _Waypoints; } set { _Waypoints = value; OnPropertyChanged(); } }
@@ -104,8 +104,6 @@ namespace csNavplan
 
         public void RecalcUtmRect()
         {
-            Utm middleUtm = Utm.FromWgs84(ImageData.Wgs84);
-
             double utmDistanceBetweenAlignsX = Math.Abs(Align2.Utm.Easting - Align1.Utm.Easting);
             double pctDistanceBetweenAlignsX = Math.Abs(Align2.Pct.X - Align1.Pct.X);
             UtmWidth = 1.0 / pctDistanceBetweenAlignsX * utmDistanceBetweenAlignsX;
@@ -114,8 +112,19 @@ namespace csNavplan
             double pctDistanceBetweenAlignsY = Math.Abs(Align2.Pct.Y - Align1.Pct.Y);
             UtmHeight = 1.0 / pctDistanceBetweenAlignsY * utmDistanceBetweenAlignsY;
 
-            UtmLeft = middleUtm.Easting - (UtmWidth / 2);
-            UtmTop = middleUtm.Northing - (UtmHeight / 2);
+            if (ImageHasWgs84)
+            {
+                Utm middleUtm = Utm.FromWgs84(ImageData.Wgs84);
+                UtmLeft = middleUtm.Easting - (UtmWidth / 2);
+                UtmTop = middleUtm.Northing - (UtmHeight / 2);
+            }
+            else
+            {
+                //---R
+                UtmLeft = -ImageData.Pct.X / 2;
+                UtmTop = -ImageData.Pct.Y / 2;
+            }
+
             var t = $"Plan::RecalcUtmRect = ({UtmLeft:F5}, {UtmTop:F5}, {UtmWidth:F3}, {UtmHeight:F3})";
             MainWindow.Status = t;
             System.Diagnostics.Trace.WriteLine(t);
@@ -123,7 +132,6 @@ namespace csNavplan
 
         internal void RecalcOrigin()
         {
-            // todo this is working, but needs to be manually triggered
             // todo it would also be nice if origin entered via Wgs84 would trigger placement on map, but that would be true for any point
             Origin.Utm = new Utm
             {
@@ -149,7 +157,7 @@ namespace csNavplan
                     BackgroundBrush = new ImageBrush(new BitmapImage(new Uri(ImageFileName)));
                     MainWindow.Status = "Loaded local Image for background";
                 }
-                else if (Math.Abs(ImageData.Wgs84.Longitude) + Math.Abs(ImageData.Wgs84.Latitude) > 0)
+                else if (ImageHasWgs84)
                 {
                     int zoom = (int)ImageData.Local.X; // todo not the best UI 
                     ImageFileName = ""; // indicates we did not load an image from disk
@@ -191,6 +199,8 @@ namespace csNavplan
                 dc.DrawLine(gridPen, new Point(0, startY - (i * oneMeterY * gridSpacing)), new Point(pc.ActualWidth, startY - (i * oneMeterY * gridSpacing)));
             }
         }
+
+        public bool ImageHasWgs84 { get { return Math.Abs(ImageData.Wgs84.Longitude) + Math.Abs(ImageData.Wgs84.Latitude) > 0; } }
 
         internal void ResetSequenceNumbers()
         {

@@ -34,15 +34,16 @@
             </Ribbon.QuickAccessToolBar>
             <Ribbon.ApplicationMenu>
                 <RibbonApplicationMenu>
-                    <RibbonApplicationMenuItem Header="_New" Click="New_Click"  />
-                    <RibbonApplicationMenuItem Header="_Open ..." Click="Open_Click" />
-                    <RibbonApplicationMenuItem Header="_Save" Command="Save" />
+                    <RibbonApplicationMenuItem Header="_New" Click="New_Click" ImageSource="images/Document-02.png"  />
+                    <RibbonApplicationMenuItem Header="_Open ..." Click="Open_Click" ImageSource="images/Open.png" />
+                    <RibbonApplicationMenuItem Header="_Save" Command="Save" ImageSource="images/Save.png" />
                     <RibbonApplicationMenuItem Header="Save _as ...." Click="SaveAs_Click"  />
                     <RibbonApplicationMenuItem Header="E_xit" Command="Close" />
                     <RibbonSeparator />
                     <RibbonApplicationMenuItem Header="_Clear Image" Click="ClearImage_Click"  />
                     <RibbonApplicationMenuItem Header="_Import Image ..." Click="ImportImage_Click" />
                     <RibbonApplicationMenuItem Header="Sa_ve Image ..." Click="SaveImage_Click" />
+                    <RibbonSeparator />
                     <RibbonApplicationMenuItem Header="Color ..." Click="Color_Click" />
                 </RibbonApplicationMenu>
             </Ribbon.ApplicationMenu>
@@ -52,18 +53,25 @@
                     <RibbonButton Content="Plan to Clipboard" Click="PlanToClipboard_Click" />
 
                     <!--<TextBlock Text="Grid Spacing" Margin="8,0" />-->
-                    <ComboBox Text="gridSpacing1" SelectedIndex="2" Width="64" >
-                        <ComboBoxItem>.1</ComboBoxItem>
-                        <ComboBoxItem>1</ComboBoxItem>
-                        <ComboBoxItem>10</ComboBoxItem>
-                    </ComboBox>
+                    <RibbonComboBox Label="Grid Spacing" >
+                        <RibbonGallery SelectedValue="10" SelectedValuePath="Content" MaxColumnCount="1">
+                            <RibbonGalleryCategory>
+                                <RibbonGalleryItem Content=".1" />
+                                <RibbonGalleryItem Content="1"  />
+                                <RibbonGalleryItem Content="10" />
+                            </RibbonGalleryCategory>
+                        </RibbonGallery>
+                    </RibbonComboBox>
 
-                    <TextBlock Text="Zoom" Margin="8,0" />
-                    <Slider x:Name="zoom1" Minimum="1" Maximum="5" Width="72" />
+                    <StackPanel Orientation="Horizontal" >
+                        <TextBlock Text="Zoom" Margin="8,4" />
+                        <Slider x:Name="zoom1" Minimum="1" Maximum="5" Width="96" Margin="12,0"/>
+                    </StackPanel>
                 </RibbonGroup>
-                <RibbonGroup Header="Temp" >                    
-                    <Button Content="Generate" Click="PlanToClipboard_Click" />
-                    <Button Content="OriginCalc" />
+                <RibbonGroup Header="Temp" >
+                    <RibbonButton Label="Generate" Click="PlanToClipboard_Click" LargeImageSource="images/C Sharp-01.png" />
+                    <RibbonButton Label="Origin RC" Click="OriginRC_Click" LargeImageSource="images/House-07.png"  />
+                    <RibbonButton Label="UtmRect RC" Click="UtmRectRCRibbonButton_Click" LargeImageSource="images/Maps -04.png" />
                 </RibbonGroup>
             </RibbonTab>
         </Ribbon>

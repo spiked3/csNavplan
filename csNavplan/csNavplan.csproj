@@ -191,6 +191,26 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="images\Braces-01.png" />
+    <Resource Include="images\C Sharp-01.png" />
+    <Resource Include="images\Document-02.png" />
+    <Resource Include="images\FIle Save.png" />
+    <Resource Include="images\File-Format-JPEG.png" />
+    <Resource Include="images\File.png" />
+    <Resource Include="images\Grid.png" />
+    <Resource Include="images\House-07.png" />
+    <Resource Include="images\Measurements - 04.png" />
+    <Resource Include="images\Save.png" />
+    <Resource Include="images\Source-Code.png" />
+    <Resource Include="images\Zoom - corner - 01.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="images\Maps -04.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="images\Open.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

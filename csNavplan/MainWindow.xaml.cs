@@ -392,6 +392,16 @@ namespace csNavplan
             Close();
         }
 
+        private void OriginRC_Click(object sender, RoutedEventArgs e)
+        {
+            Plan.RecalcOrigin();
+        }
+
+        private void UtmRectRCRibbonButton_Click(object sender, RoutedEventArgs e)
+        {
+            Plan.RecalcUtmRect();
+        }
+
         private void Color_Click(object sender, RoutedEventArgs e)
         {
             new ColorsDlg().Show();
