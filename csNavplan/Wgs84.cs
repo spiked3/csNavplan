@@ -31,6 +31,8 @@ namespace csNavplan
         public double Latitude { get { return _Latitude; } set { _Latitude = value; OnPropertyChanged(); } }
         double _Latitude = 0;
 
+        public bool isNotZero { get { return Math.Abs(_Longitude) + Math.Abs(_Latitude) != 0.0; } }
+
         public static Wgs84 FromUtm(Utm u)
         {
             bool isNorthHemisphere = u.Zone.Last() >= 'N';

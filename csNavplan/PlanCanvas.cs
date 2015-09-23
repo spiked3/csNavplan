@@ -15,6 +15,15 @@ namespace csNavplan
     {
         static double markerRadius = 5.0;
 
+        public double GridSpacing
+        {
+            get { return (double)GetValue(GridSpacingProperty); }
+            set { SetValue(GridSpacingProperty, value); }
+        }
+        public static readonly DependencyProperty GridSpacingProperty =
+            DependencyProperty.Register("GridSpacing", typeof(double), typeof(PlanCanvas), new PropertyMetadata(10.0));
+
+
         public Brush Foreground
         {
             get { return (Brush)GetValue(ForegroundProperty); }
@@ -79,8 +88,7 @@ namespace csNavplan
             Plan plan = (DataContext as MainWindow).Plan;
             if (plan == null) return;
 
-            double gridSpacing = 10.0;
-            plan.RenderBackground(dc, this, gridSpacing);
+            plan.RenderBackground(dc, this, GridSpacing);
 
             DrawPlanPoint(dc, plan.Origin);
             DrawPlanPoint(dc, plan.Align1);

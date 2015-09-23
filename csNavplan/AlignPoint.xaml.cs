@@ -49,15 +49,13 @@ namespace csNavplan
 
         private void UtmUpdate(object sender, EventArgs e)
         {
-            // todo this needs to bubble up an AlignmentPointChanged event
             DispatcherTimer dt = sender as DispatcherTimer;
             PlanPoint p = dt.Tag as PlanPoint;
             if (p == null) System.Diagnostics.Debugger.Break();
-
-            p.Utm = Utm.FromWgs84(p.Wgs84);
-
+            if (p.Wgs84.isNotZero)
+                p.Utm = Utm.FromWgs84(p.Wgs84);
             p.dt.Stop();
-            p.dt = null;            
+            p.dt = null;
         }
 
         private void Utm_TextChanged(object sender, TextChangedEventArgs e)
