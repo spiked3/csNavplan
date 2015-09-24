@@ -52,7 +52,7 @@ namespace csNavplan
             DispatcherTimer dt = sender as DispatcherTimer;
             PlanPoint p = dt.Tag as PlanPoint;
             if (p == null) System.Diagnostics.Debugger.Break();
-            if (p.Wgs84.isNotZero)
+            if (!p.Wgs84.isZero)
                 p.Utm = Utm.FromWgs84(p.Wgs84);
             p.dt.Stop();
             p.dt = null;

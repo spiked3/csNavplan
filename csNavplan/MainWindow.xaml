@@ -124,7 +124,7 @@
             <Separator />
 
             <StatusBarItem HorizontalAlignment="Right" >
-                <TextBlock x:Name="StatusBarTextBlock" />
+                <TextBlock x:Name="ToastTextBlock" />
             </StatusBarItem>
         </StatusBar>
 

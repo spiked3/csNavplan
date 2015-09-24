@@ -31,7 +31,7 @@ namespace csNavplan
         public double Latitude { get { return _Latitude; } set { _Latitude = value; OnPropertyChanged(); } }
         double _Latitude = 0;
 
-        public bool isNotZero { get { return Math.Abs(_Longitude) + Math.Abs(_Latitude) != 0.0; } }
+        public bool isZero { get { return Math.Abs(_Longitude) + Math.Abs(_Latitude) == 0.0; } }
 
         public static Wgs84 FromUtm(Utm u)
         {
@@ -88,13 +88,13 @@ namespace csNavplan
             return $"{Latitude:F5},{Longitude:F5}";
         }
 
-        public static double gps2m(double lat_a, double lng_a, double lat_b, double lng_b)
+        public double DistanceTo(Wgs84 w)
         {
             double pk = 180.0 / Math.PI;
-            double a1 = lat_a / pk;
-            double a2 = lng_a / pk;
-            double b1 = lat_b / pk;
-            double b2 = lng_b / pk;
+            double a1 = w.Latitude / pk;
+            double a2 = w.Longitude / pk;
+            double b1 = Latitude / pk;
+            double b2 = Longitude / pk;
 
             double t1 = Math.Cos(a1) * Math.Cos(a2) * Math.Cos(b1) * Math.Cos(b2);
             double t2 = Math.Cos(a1) * Math.Sin(a2) * Math.Cos(b1) * Math.Sin(b2);

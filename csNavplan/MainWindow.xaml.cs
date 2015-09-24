@@ -108,15 +108,57 @@ namespace csNavplan
         public static readonly DependencyProperty PropertyGridObjectProperty =
             DependencyProperty.Register("PropertyGridObject", typeof(Object), typeof(MainWindow));
 
-        static TextBlock _statusBarTextBlock;
-        public static string Status {  set { _statusBarTextBlock.Text = value; } }
 
         double lastMouseRightX, lastMouseRightY;
+
+        #region toast
+
+        static TextBlock _ToastTextBlock;
+
+        public static void Toast(string t)
+        {
+            if (_ToastTextBlock == null)
+                _ToastTextBlock = FindChild<TextBlock>(Application.Current.MainWindow, "ToastTextBlock");
+            _ToastTextBlock.Text = t;
+        }
+
+        public static T FindChild<T>(DependencyObject parent, string childName) where T : DependencyObject
+        {
+            if (parent == null) return null;
+            T foundChild = null;
+            int childrenCount = VisualTreeHelper.GetChildrenCount(parent);
+            for (int i = 0; i < childrenCount; i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                T childType = child as T;
+                if (childType == null)
+                {
+                    foundChild = FindChild<T>(child, childName);
+
+                    if (foundChild != null) break;
+                }
+                else if (!string.IsNullOrEmpty(childName))
+                {
+                    var frameworkElement = child as FrameworkElement;
+                    if (frameworkElement != null && frameworkElement.Name == childName)
+                    {
+                        foundChild = (T)child;
+                        break;
+                    }
+                }
+                else
+                {
+                    foundChild = (T)child;
+                    break;
+                }
+            }
+            return foundChild;
+        }
+        #endregion
 
         public MainWindow()
         {
             InitializeComponent();
-            _statusBarTextBlock = StatusBarTextBlock;
         }
 
         public Point ScreenPoint2Pct(Point a)
@@ -165,7 +207,6 @@ namespace csNavplan
 
             PlanChanged += MainWindow_PlanChanged;
             WindowTitle = $"Navigation Planner, {Plan.PlanFilename}{(Plan.IsDirty ? '*' : ' ')}";
-
         }
 
         private void Plan_AlignmentChanged(object sender, EventArgs e)
@@ -176,10 +217,13 @@ namespace csNavplan
         private void Waypoints_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
             MainWindow_PlanChanged(sender, null);
+            Plan.RecalcOrigin();
         }
 
         private void MainWindow_PlanChanged(object sender, RoutedEventArgs e)
         {
+            Plan.RecalcOrigin();
+
             var a = Plan.Align1.Utm.Easting - Plan.Align2.Utm.Easting;
             var b = Plan.Align1.Utm.Northing - Plan.Align2.Utm.Northing;
             AlignUtmDistance = Math.Sqrt((a * a) + (b * b));
@@ -260,9 +304,13 @@ namespace csNavplan
 
             if (mouseDragStarted)
             {
-                // todo needs normalizing -179/180
                 var h = Math.Atan2(grid1.RulerEnd.Value.Y - grid1.RulerStart.Value.Y, grid1.RulerEnd.Value.X - grid1.RulerStart.Value.X);
+
                 RulerHeading = (float)(h * 180 / Math.PI) + 90;
+
+                while (RulerHeading > 180 || RulerHeading < -180)
+                    RulerHeading += (RulerHeading > 180) ? -360 : 360;  // normalize
+
                 grid1.RulerEnd = e.GetPosition(grid1);
                 grid1.InvalidateVisual();
             }
@@ -275,7 +323,7 @@ namespace csNavplan
             else
                 zoom1.Value += 0.1;
 
-            // hack kinda kludgy but works kinda
+            // hack too zoom at mouse focus, kinda kludgy but works
             grid1.RenderTransformOrigin = MousePct;
 
             e.Handled = true;
@@ -293,10 +341,9 @@ namespace csNavplan
         {
             Plan = new Plan();
 
-            // todo stub
 #if true
             Random r = new Random();
-            for (var i = 0; i < 32; i++)
+            for (var i = 0; i < 4; i++)
             {
                 var w = new Waypoint();
                 w.XY = new Point(r.Next(100)/100.0, r.Next(100)/100.0);
@@ -344,9 +391,9 @@ namespace csNavplan
             if (d.ShowDialog() ?? false)
             {
                 if (Plan.SaveImage(d.FileName))
-                    Status = "Image saved";
+                    MainWindow.Toast("Image saved");
                 else
-                    Status = "Image save failed!";
+                    MainWindow.Toast("Image save failed!");
             }
         }
 
@@ -355,7 +402,7 @@ namespace csNavplan
             Waypoint wp = new Waypoint { isAction = false };
             wp.XY = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
             Plan.Waypoints.Add(wp);
-            Status = "Waypoint added";
+            MainWindow.Toast("Waypoint added");
         }
 
         private void ActionWaypoint_Click(object sender, RoutedEventArgs e)
@@ -363,12 +410,12 @@ namespace csNavplan
             Waypoint wp = new Waypoint { isAction = true };
             wp.XY = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
             Plan.Waypoints.Add(wp);
-            Status = "Action Waypoint added";
+            MainWindow.Toast("Action Waypoint added");
         }
 
         private void Test_Click(object sender, RoutedEventArgs e)
         {
-            Status = "Test_Click";
+            MainWindow.Toast("Test_Click");
             var w = new Wgs84 { Latitude = -122.3510883, Longitude = 47.6204584 };
             var u = Utm.FromWgs84(w);
 
@@ -378,13 +425,13 @@ namespace csNavplan
         private void PlanToClipboard_Click(object sender, RoutedEventArgs e)
         {
             Clipboard.SetText(Plan.GetNavCode(RulerHeading));
-            Status = "Code pushed onto clipboard";
+            MainWindow.Toast("Code pushed onto clipboard");
         }
 
         private void CommandBinding_Save(object sender, ExecutedRoutedEventArgs e)
         {
             Plan.Save(this);
-            Status = "Saved";
+            MainWindow.Toast("Saved");
         }
 
         private void CommandBinding_Close(object sender, ExecutedRoutedEventArgs e)

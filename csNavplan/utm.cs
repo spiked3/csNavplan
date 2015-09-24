@@ -35,6 +35,8 @@ namespace csNavplan
         public double Northing { get { return _Northing; } set { _Northing = value; OnPropertyChanged(); } }
         double _Northing = 0;
 
+        public bool isZero { get { return Math.Abs(_Easting) + Math.Abs(_Northing) == 0.0; } }
+
         static public Utm FromWgs84(Wgs84 w)
         {
             Utm u = new Utm();

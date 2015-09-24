@@ -126,7 +126,7 @@ namespace csNavplan
             }
 
             var t = $"Plan::RecalcUtmRect = ({UtmLeft:F5}, {UtmTop:F5}, {UtmWidth:F3}, {UtmHeight:F3})";
-            MainWindow.Status = t;
+            MainWindow.Toast(t);
             System.Diagnostics.Trace.WriteLine(t);
         }
 
@@ -141,7 +141,7 @@ namespace csNavplan
             };   // hack hardcoded zone
 
             var t = $"Plan::RecalcOrigin = ({Origin.Utm})";
-            MainWindow.Status = t;
+            MainWindow.Toast(t);
             System.Diagnostics.Trace.WriteLine(t);
         }
 
@@ -155,11 +155,13 @@ namespace csNavplan
                 if (ImageFileName?.Length > 0)
                 {
                     BackgroundBrush = new ImageBrush(new BitmapImage(new Uri(ImageFileName)));
-                    MainWindow.Status = "Loaded local Image for background";
+                    MainWindow.Toast("Loaded local Image for background");
                 }
                 else if (ImageHasWgs84)
                 {
-                    int zoom = (int)ImageData.Local.X; // todo not the best UI 
+                    int zoom = (int)ImageData.Local.X; // todo not the best UI, gets value from an unused point
+                    if (zoom == 0) zoom = 19;
+
                     ImageFileName = ""; // indicates we did not load an image from disk
 
                     // https://groups.google.com/forum/#!topic/google-maps-js-api-v3/hDRO4oHVSeM
@@ -170,12 +172,12 @@ namespace csNavplan
                         $"key={API_KEY}";
 
                     BackgroundBrush = new ImageBrush(new BitmapImage(new Uri(LastGoogleMapUri)));
-                    MainWindow.Status = "Fetched GoogleMap for background";
+                    MainWindow.Toast("Fetched GoogleMap for background");
                 }
                 else
                 {
                     BackgroundBrush = new SolidColorBrush(Colors.DarkGray);
-                    MainWindow.Status = "Create empty background brush";
+                    MainWindow.Toast("Create empty background brush");
                 }
             }
 
