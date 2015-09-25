@@ -54,7 +54,7 @@
 
                     <!--<TextBlock Text="Grid Spacing" Margin="8,0" />-->
                     <RibbonComboBox Label="Grid Spacing" >
-                        <RibbonGallery SelectedValue="10" SelectedValuePath="Content" MaxColumnCount="1" SelectionChanged="RibbonGallery_SelectionChanged" >
+                        <RibbonGallery x:Name="spacingCombobox1" SelectedValue="10" SelectedValuePath="Content" MaxColumnCount="1" SelectionChanged="RibbonGallery_SelectionChanged" >
                             <RibbonGalleryCategory>
                                 <RibbonGalleryItem Content=".1" />
                                 <RibbonGalleryItem Content="1"  />

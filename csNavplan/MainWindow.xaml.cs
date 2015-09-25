@@ -186,6 +186,7 @@ namespace csNavplan
                 Settings1.Default.lastPlan = null;
             Settings1.Default.Width = (float)Width;
             Settings1.Default.Height = (float)Height;
+            Settings1.Default.gridSpacing = grid1.GridSpacing;
             Settings1.Default.Save();
         }
 
@@ -196,16 +197,15 @@ namespace csNavplan
             if (Width < 20) Width = 640;
             if (Height < 20) Height = 480;
 
+            spacingCombobox1.SelectedValue = Settings1.Default.gridSpacing.ToString();
 
             if (Settings1.Default.lastPlan?.Length > 0)
-            {
                 Plan = Plan.Load(Settings1.Default.lastPlan);
-                Plan.Waypoints.CollectionChanged += Waypoints_CollectionChanged;
-            }
-            else
+            if (Plan == null)
                 New_Click(this, null);
 
             PlanChanged += MainWindow_PlanChanged;
+            Plan.Waypoints.CollectionChanged += Waypoints_CollectionChanged;
             WindowTitle = $"Navigation Planner, {Plan.PlanFilename}{(Plan.IsDirty ? '*' : ' ')}";
         }
 
@@ -381,7 +381,10 @@ namespace csNavplan
         {
             OpenFileDialog d = new OpenFileDialog { Filter = "Image Files|*.bmp;*.jpg;*.jpeg;*.png;*.gif|All Files|*.*" };
             if (d.ShowDialog() ?? false)
-                Plan.ImageFileName = d.FileName;                
+            {
+                Plan.ImageFileName = d.FileName;
+                Plan.BackgroundBrush = null;
+            }
             grid1.InvalidateVisual();
         }
 

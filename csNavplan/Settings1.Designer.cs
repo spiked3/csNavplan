@@ -58,5 +58,17 @@ namespace csNavplan {
                 this["lastPlan"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double gridSpacing {
+            get {
+                return ((double)(this["gridSpacing"]));
+            }
+            set {
+                this["gridSpacing"] = value;
+            }
+        }
     }
 }
