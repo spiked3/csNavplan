@@ -452,11 +452,6 @@ namespace csNavplan
             Plan.RecalcUtmRect();
         }
 
-        private void RibbonComboBox_TargetUpdated(object sender, TextCompositionEventArgs e)
-        {
-
-        }
-
         private void RibbonGallery_SelectionChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
             var t = ((sender as RibbonGallery).SelectedItem as RibbonGalleryItem).Content.ToString();
