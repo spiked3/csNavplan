@@ -12,6 +12,16 @@ namespace csNavplan
 {
     public partial class MainWindow : RibbonWindow
     {
+        public float  RulerLength
+        {
+            get { return (float )GetValue(RulerLengthProperty); }
+            set { SetValue(RulerLengthProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for RulerLength.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty RulerLengthProperty =
+            DependencyProperty.Register("RulerLength", typeof(float ), typeof(MainWindow), new PropertyMetadata(0F));
+
         public float RulerHeading
         {
             get { return (float)GetValue(RulerHeadingProperty); }
@@ -312,6 +322,11 @@ namespace csNavplan
                     RulerHeading += (RulerHeading > 180) ? -360 : 360;  // normalize
 
                 grid1.RulerEnd = e.GetPosition(grid1);
+
+                var _endPct = ScreenPoint2Pct(new Point(grid1.RulerEnd.Value.X, grid1.RulerEnd.Value.Y));
+                var _strtPct = ScreenPoint2Pct(new Point(grid1.RulerStart.Value.X, grid1.RulerStart.Value.Y));
+                var _len = Plan.Pct2Local(_endPct) - Plan.Pct2Local(_strtPct);
+                RulerLength = (float)(Math.Sqrt(_len.LengthSquared));
                 grid1.InvalidateVisual();
             }
         }
@@ -406,6 +421,7 @@ namespace csNavplan
             wp.XY = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
             Plan.Waypoints.Add(wp);
             MainWindow.Toast("Waypoint added");
+            //grid1.InvalidateVisual();
         }
 
         private void ActionWaypoint_Click(object sender, RoutedEventArgs e)
@@ -414,6 +430,7 @@ namespace csNavplan
             wp.XY = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
             Plan.Waypoints.Add(wp);
             MainWindow.Toast("Action Waypoint added");
+            // grid1.InvalidateVisual();
         }
 
         private void Test_Click(object sender, RoutedEventArgs e)

@@ -117,6 +117,9 @@
             <Separator />
             <StatusBarItem >
                 <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Ruler Length " />
+                    <TextBlock Text="{Binding RulerLength,StringFormat={}{0:F3}}" />
+                    <TextBlock Text="  " />
                     <TextBlock Text="Ruler Heading " />
                     <TextBlock Text="{Binding RulerHeading,StringFormat={}{0:F1}}" />
                 </StackPanel>

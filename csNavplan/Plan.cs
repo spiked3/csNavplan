@@ -261,26 +261,30 @@ namespace csNavplan
             StringBuilder b = new StringBuilder();
             b.AppendLine("Pilot = Pilot.Factory(\"192.168.42.1\");");
             b.AppendLine("Pilot.OnPilotReceive += Pilot_OnReceive;");
-            b.AppendLine("Send(new { Cmd = \"CONFIG\", Geom = new float[] { 336.2F, 450F } });");
-            b.AppendLine($"Send(new {{ Cmd = \"RESET\", Hdg = {initialHeading:F1} }});");
-            b.AppendLine("Send(new { Cmd = \"ESC\", Value = 1 });");
+            b.AppendLine("Pilot.Send(new { Cmd = \"CONFIG\", Geom = new float[] { 336.2F, 450F } });");
+            b.AppendLine($"Pilot.Send(new {{ Cmd = \"RESET\", Hdg = {initialHeading:F1} }});");
+            b.AppendLine("Pilot.Send(new { Cmd = \"ESC\", Value = 1 });");
             foreach (Waypoint w in Waypoints)
             {
                 Point local = Pct2Local(w.XY);
-                b.AppendLine($"//Send(new {{ Cmd = \"GOTOXY\", X={local.X:F3}, Y={local.Y:F3}, Pwr = 40.0F }});");    // gotoxy version
 
-                var _x = w.XY.X - X;
-                var _y = w.XY.Y - Y;
-                var hdgToNxt = Math.Atan2(_y, _x);
+                //b.AppendLine($"//Send(new {{ Cmd = \"GOTO\", X={local.X:F3}, Y={local.Y:F3}, Pwr = 40.0F }});");    // gotoxy version
+
+                var _x = local.X - X;
+                var _y = local.Y - Y;
+
+                var hdgToNxt = (Math.Atan2(_y, _x) * 180.0 / Math.PI) + 90.0;
                 var distToNext = Math.Sqrt((_x * _x) + (_y * _y));
-                b.AppendLine($"Send(new {{ Cmd = \"ROTA\", Hdg={hdgToNxt * 180 / Math.PI:F1}, Pwr = 40.0F }});");    // Turn/Move version
-                b.AppendLine("waitForEvent();");
-                b.AppendLine($"Send(new {{ Cmd = \"MOVE\", Dist={distToNext:F1}, Pwr = 40.0F }});");
-                b.AppendLine("waitForEvent();");
-                X = w.XY.X;
-                Y = w.XY.Y;
+
+                b.AppendLine($"Pilot.Send(new {{ Cmd = \"ROT\", Hdg={hdgToNxt:F1}, Pwr = 40.0F }});");    // Turn/Move version
+                b.AppendLine("Pilot.waitForEvent();");
+                b.AppendLine($"Pilot.Send(new {{ Cmd = \"MOV\", Dist={distToNext:F1}, Pwr = 40.0F }});");
+                b.AppendLine("Pilot.waitForEvent();");
+
+                X = local.X;
+                Y = local.Y;
             }
-            b.AppendLine("Send(new { Cmd = \"ESC\", Value = 0 });");
+            b.AppendLine("Pilot.Send(new { Cmd = \"ESC\", Value = 0 });");
             return b.ToString();
         }
     }
