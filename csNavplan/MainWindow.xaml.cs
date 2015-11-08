@@ -483,8 +483,8 @@ namespace csNavplan
         private void Publish_Click(object sender, RoutedEventArgs e)
         {
             MqttClient Mq;
-            //string broker = "192.168.42.1";
-            string broker = "127.0.0.1";
+            string broker = "192.168.42.1";
+            //string broker = "127.0.0.1";
             Mq = new MqttClient(broker);
             Mq.Connect("pNavPlan");
 
