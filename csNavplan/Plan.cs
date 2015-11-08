@@ -254,6 +254,23 @@ namespace csNavplan
             return p;
         }
 
+        public string WayPointsAsJson(float initialHeading)
+        {
+            // todo someday maybe some sort of templates
+            StringBuilder b = new StringBuilder($"{{\"ResetHdg\":{initialHeading},\"WayPoints\":[");
+            bool firstTime = true;
+            foreach (Waypoint w in Waypoints)
+            {
+                if (!firstTime)
+                    b.Append(",");
+                else
+                    firstTime = false;
+                Point local = Pct2Local(w.XY);
+                b.AppendLine($"[{local.X}, {local.Y}, {(w.isAction?1:0)}]");    // Turn/Move version
+            }
+            return b.AppendLine($"]}}").ToString();
+        }
+
         internal string GetNavCode(float initialHeading)
         {
             double X=0, Y=0;
@@ -261,7 +278,9 @@ namespace csNavplan
             StringBuilder b = new StringBuilder();
             b.AppendLine("Pilot = Pilot.Factory(\"192.168.42.1\");");
             b.AppendLine("Pilot.OnPilotReceive += Pilot_OnReceive;");
-            b.AppendLine("Pilot.Send(new { Cmd = \"CONFIG\", Geom = new float[] { 336.2F, 450F } });");
+            // old b.AppendLine("Pilot.Send(new { Cmd = \"CONFIG\", Geom = new float[] { 336.2F, 450F } });");
+            b.AppendLine("Pilot.Send(new { Cmd = \"CONFIG\", Geom = new float[] { 336.2F, 450F }, M1 = new int[] { 1, -1 }, M2 = new int[] { -1, 1 } });");
+
             b.AppendLine($"Pilot.Send(new {{ Cmd = \"RESET\", Hdg = {initialHeading:F1} }});");
             b.AppendLine("Pilot.Send(new { Cmd = \"ESC\", Value = 1 });");
             foreach (Waypoint w in Waypoints)

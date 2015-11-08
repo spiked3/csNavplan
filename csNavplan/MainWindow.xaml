@@ -70,6 +70,7 @@
                 </RibbonGroup>
                 <RibbonGroup Header="Temp" >
                     <RibbonButton Label="Generate" Click="PlanToClipboard_Click" LargeImageSource="images/C Sharp-01.png" />
+                    <RibbonButton Label="Publish" LargeImageSource="images/Document-02.png" Click="Publish_Click" />
                     <RibbonButton Label="Origin RC" Click="OriginRC_Click" LargeImageSource="images/House-07.png"  />
                     <RibbonButton Label="UtmRect RC" Click="UtmRectRCRibbonButton_Click" LargeImageSource="images/Maps -04.png" />
                 </RibbonGroup>
@@ -131,7 +132,7 @@
             </StatusBarItem>
         </StatusBar>
 
-        <Expander x:Name="alignmentExpander" DockPanel.Dock="Right" ExpandDirection="Left" IsExpanded="True" >
+        <Expander x:Name="alignmentExpander" DockPanel.Dock="Right" ExpandDirection="Left" IsExpanded="False" >
             <Expander.Header>
                 <TextBlock Text="Alignment Points">
                     <TextBlock.LayoutTransform>

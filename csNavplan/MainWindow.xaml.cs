@@ -2,11 +2,13 @@
 using Newtonsoft.Json;
 using System;
 using System.ComponentModel;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Ribbon;
 using System.Windows.Input;
 using System.Windows.Media;
+using uPLibrary.Networking.M2Mqtt;
 
 namespace csNavplan
 {
@@ -326,7 +328,7 @@ namespace csNavplan
                 var _endPct = ScreenPoint2Pct(new Point(grid1.RulerEnd.Value.X, grid1.RulerEnd.Value.Y));
                 var _strtPct = ScreenPoint2Pct(new Point(grid1.RulerStart.Value.X, grid1.RulerStart.Value.Y));
                 var _len = Plan.Pct2Local(_endPct) - Plan.Pct2Local(_strtPct);
-                RulerLength = (float)(Math.Sqrt(_len.LengthSquared));
+                RulerLength = (float)_len.Length;
                 grid1.InvalidateVisual();
             }
         }
@@ -444,7 +446,8 @@ namespace csNavplan
 
         private void PlanToClipboard_Click(object sender, RoutedEventArgs e)
         {
-            Clipboard.SetText(Plan.GetNavCode(RulerHeading));
+            //Clipboard.SetText(Plan.GetNavCode(RulerHeading));
+            Clipboard.SetText(Plan.WayPointsAsJson(RulerHeading));
             MainWindow.Toast("Code pushed onto clipboard");
         }
 
@@ -475,6 +478,22 @@ namespace csNavplan
             double g = double.Parse(t);
             grid1.GridSpacing = g;
             grid1.InvalidateVisual();
+        }
+
+        private void Publish_Click(object sender, RoutedEventArgs e)
+        {
+            MqttClient Mq;
+            //string broker = "192.168.42.1";
+            string broker = "127.0.0.1";
+            Mq = new MqttClient(broker);
+            Mq.Connect("pNavPlan");
+
+            System.Diagnostics.Trace.WriteLine($"Connected to MQTT @ {broker}", "1");
+
+            Mq.Publish("Navplan/WayPoints", Encoding.ASCII.GetBytes(Plan.WayPointsAsJson(RulerHeading)));
+            System.Threading.Thread.Sleep(200);
+
+            Mq.Disconnect();
         }
 
         private void Color_Click(object sender, RoutedEventArgs e)
