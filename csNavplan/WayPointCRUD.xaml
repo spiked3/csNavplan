@@ -50,8 +50,8 @@
                         <CheckBox  IsChecked="{Binding isAction}" Grid.Column="1" >
                             <TextBlock Text="Action" />
                         </CheckBox>
-                        <TextBox Text="{Binding XY,StringFormat={}{0:F3}}" Grid.Row="1" Margin="2,1" />
-                        <TextBox Text="{Binding Local,StringFormat={}{0:F3}}" Grid.Row="1" Grid.Column="1" Margin="2,1" />
+                        <TextBox Text="{Binding Local,StringFormat={}{0:F3}}" Grid.Row="1" Margin="2,1" />
+                        <Button Content="Edit" Grid.Row="1" Grid.Column="1" Margin="4" Click="Edit_Click" />
                     </Grid>
                 </DataTemplate>
             </ListView.ItemTemplate>

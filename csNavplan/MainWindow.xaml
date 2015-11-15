@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:csNavplan"
-        xmlns:xtk="http://schemas.xceed.com/wpf/xaml/toolkit"        
+        xmlns:xtk="http://schemas.xceed.com/wpf/xaml/toolkit"                 
         mc:Ignorable="d"
         Title="{Binding WindowTitle}"
         DataContext="{Binding RelativeSource={RelativeSource Self}}" Closing="Window_Closing" Loaded="Window_Loaded" d:DesignWidth="1046" d:DesignHeight="857" >
@@ -128,11 +128,11 @@
             <Separator />
 
             <StatusBarItem HorizontalAlignment="Right" >
-                <TextBlock x:Name="ToastTextBlock" />
+                <TextBlock x:Name="StatusTextBlock" />
             </StatusBarItem>
         </StatusBar>
 
-        <Expander x:Name="alignmentExpander" DockPanel.Dock="Right" ExpandDirection="Left" IsExpanded="False" >
+        <Expander x:Name="alignmentExpander" DockPanel.Dock="Right" ExpandDirection="Left" IsExpanded="true" >
             <Expander.Header>
                 <TextBlock Text="Alignment Points">
                     <TextBlock.LayoutTransform>
@@ -141,11 +141,13 @@
                 </TextBlock>
             </Expander.Header>
             <StackPanel Orientation="Vertical" Width="Auto">
-                <local:AlignPointCtl DataContext="{Binding Plan.ImageData}" Height="Auto" Width="Auto" />
+                <!--todo
+                <local:AlignPointCtl DataContext="{Binding Plan.ImagePlanPoint}" Height="Auto" Width="Auto" />
                 <Button Content="Google" Width="75" Click="Google_Click" Margin="4" />
                 <local:AlignPointCtl DataContext="{Binding Plan.Align1}" />
                 <local:AlignPointCtl DataContext="{Binding Plan.Align2}" />
-                <local:AlignPointCtl DataContext="{Binding Plan.Origin}" />
+                <local:AlignPointCtl DataContext="{Binding Plan.Origin}" />-->
+                <xtk:PropertyGrid SelectedObject="{Binding Plan}" />
             </StackPanel>
         </Expander>
 

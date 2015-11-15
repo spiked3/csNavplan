@@ -4,6 +4,10 @@
              xmlns:local="clr-namespace:csNavplan"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-         
+
+        <local:UtmConverter x:Key="UtmConverter" />
+        <local:Wgs84Converter x:Key="Wgs84Converter" />
+        <local:InverseBooleanConverter x:Key="InverseBooleanConverter" />
+
     </Application.Resources>
 </Application>

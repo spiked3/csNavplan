@@ -59,7 +59,7 @@ namespace csNavplan
         public Plan Plan
         {
             get { return (Plan)GetValue(PlanProperty); }
-            set { value?.RecalcUtmRect(); SetValue(PlanProperty, value); }
+            set { value?.RecalcViewSize(); SetValue(PlanProperty, value); }
         }
         public static readonly DependencyProperty PlanProperty =
             DependencyProperty.Register("Plan", typeof(Plan), typeof(MainWindow));
@@ -123,15 +123,15 @@ namespace csNavplan
 
         double lastMouseRightX, lastMouseRightY;
 
-        #region toast
+        #region StatusMessage
 
-        static TextBlock _ToastTextBlock;
+        static TextBlock _StatusTextBlock;
 
-        public static void Toast(string t)
+        public static void Message(string t)
         {
-            if (_ToastTextBlock == null)
-                _ToastTextBlock = FindChild<TextBlock>(Application.Current.MainWindow, "ToastTextBlock");
-            _ToastTextBlock.Text = t;
+            if (_StatusTextBlock == null)
+                _StatusTextBlock = FindChild<TextBlock>(Application.Current.MainWindow, "StatusTextBlock");
+            _StatusTextBlock.Text = t;
         }
 
         public static T FindChild<T>(DependencyObject parent, string childName) where T : DependencyObject
@@ -216,67 +216,60 @@ namespace csNavplan
             if (Plan == null)
                 New_Click(this, null);
 
-            PlanChanged += MainWindow_PlanChanged;
             Plan.Waypoints.CollectionChanged += Waypoints_CollectionChanged;
             WindowTitle = $"Navigation Planner, {Plan.PlanFilename}{(Plan.IsDirty ? '*' : ' ')}";
         }
 
-        private void Plan_AlignmentChanged(object sender, EventArgs e)
-        {
-            MainWindow_PlanChanged(sender, null);
-        }
-
         private void Waypoints_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
-            MainWindow_PlanChanged(sender, null);
-            Plan.RecalcOrigin();
-        }
-
-        private void MainWindow_PlanChanged(object sender, RoutedEventArgs e)
-        {
-            Plan.RecalcOrigin();
-
-            var a = Plan.Align1.Utm.Easting - Plan.Align2.Utm.Easting;
-            var b = Plan.Align1.Utm.Northing - Plan.Align2.Utm.Northing;
-            AlignUtmDistance = Math.Sqrt((a * a) + (b * b));
-
-            // uncomment this to see it in Wgs84 - seems to be a bit more accurate, but Utm is within 1/3 meter
-            //AlignUtmDistance = Wgs84.gps2m(Plan.Align1.Wgs84.Latitude, Plan.Align1.Wgs84.Longitude, Plan.Align2.Wgs84.Latitude, Plan.Align2.Wgs84.Longitude);
             grid1.InvalidateVisual();
         }
-
-        public event RoutedEventHandler PlanChanged
-        {
-            add { AddHandler(PlanChangedEvent, value); }
-            remove { RemoveHandler(PlanChangedEvent, value); }
-        }
-
-        public static readonly RoutedEvent PlanChangedEvent =
-            EventManager.RegisterRoutedEvent("PlanChanged", RoutingStrategy.Bubble,
-            typeof(RoutedEventHandler), typeof(MainWindow));
 
         private void Align1_Click(object sender, RoutedEventArgs e)
         {
-            Plan.Align1.Pct = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
-            Plan.RecalcUtmRect();
-            Plan.RecalcOrigin();
-            grid1.InvalidateVisual();
+            var pctPoint = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
+            var d = new NavPointEditDlg(pctPoint);
+            d.ShowDialog();
+            if (d.DialogResult ?? false)
+            {
+                Plan.Align1 = d.Final;
+                grid1.InvalidateVisual();
+                Plan.OnPropertyChanged(null);   // todo ?? no longer needed?
+                Plan.RecalcViewSize();
+            }
         }
 
+        // todo kinda code smell, in the way we handle matching world vs local align points
+        // we allow align1 to be anything, we require align 2 to match it
+        // recalc skips if not matched (ie align1 was changed after align2 created)
         private void Align2_Click(object sender, RoutedEventArgs e)
         {
-            Plan.Align2.Pct = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
-            Plan.RecalcUtmRect();
-            Plan.RecalcOrigin();
-            grid1.InvalidateVisual();
+            var pctPoint = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
+            for (;;)
+            {
+                var d = new NavPointEditDlg(pctPoint);
+                d.ShowDialog();
+                if (d.DialogResult ?? false)
+                {
+                    if (Plan.Align1 != null && Plan.Align1.GetType() != d.Final.GetType())
+                    {
+                        MessageBox.Show("Align types must be same (World v Local)", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        continue;
+                    }
+
+                    Plan.Align2 = d.Final;
+                    grid1.InvalidateVisual();
+                    Plan.OnPropertyChanged(null);
+                    Plan.RecalcViewSize();
+                    return;
+                }
+                else
+                    return;
+            }
         }
 
         private void Origin_Click(object sender, RoutedEventArgs e)
         {
-            Plan.Origin.Local = new Point(0, 0);
-            Plan.Origin.Pct = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
-            Plan.RecalcOrigin();
-            grid1.InvalidateVisual();
         }
 
         bool mouseDragStarted = false;
@@ -310,9 +303,11 @@ namespace csNavplan
             var p = e.GetPosition(grid1);
             MousePct = new Point(p.X / grid1.ActualWidth, p.Y / grid1.ActualHeight);
             MouseXY = p;
-            MouseUtm = Plan.Pct2Utm(MousePct);
-            MouseLocal = Plan.Utm2Local(MouseUtm);
-            MouseGps = MouseUtm.AsWgs84();
+
+            // todo some visual indicator as you move a mouse
+            //MouseUtm = Plan.Pct2Utm(MousePct);
+            //MouseLocal = Plan.Utm2Local(MouseUtm);
+            //MouseGps = MouseUtm.AsWgs84();
 
             if (mouseDragStarted)
             {
@@ -325,10 +320,12 @@ namespace csNavplan
 
                 grid1.RulerEnd = e.GetPosition(grid1);
 
-                var _endPct = ScreenPoint2Pct(new Point(grid1.RulerEnd.Value.X, grid1.RulerEnd.Value.Y));
-                var _strtPct = ScreenPoint2Pct(new Point(grid1.RulerStart.Value.X, grid1.RulerStart.Value.Y));
-                var _len = Plan.Pct2Local(_endPct) - Plan.Pct2Local(_strtPct);
-                RulerLength = (float)_len.Length;
+                // todo some visual indicator as you move a ruler
+                //var _endPct = ScreenPoint2Pct(new Point(grid1.RulerEnd.Value.X, grid1.RulerEnd.Value.Y));
+                //var _strtPct = ScreenPoint2Pct(new Point(grid1.RulerStart.Value.X, grid1.RulerStart.Value.Y));
+                //var _len = Plan.Pct2Local(_endPct) - Plan.Pct2Local(_strtPct);
+                //RulerLength = (float)_len.Length;
+
                 grid1.InvalidateVisual();
             }
         }
@@ -348,8 +345,8 @@ namespace csNavplan
 
         private void ClearImage_Click(object sender, RoutedEventArgs e)
         {
-            Plan.ImageFileName = "";
-            Plan.ImageData.Wgs84 = new Wgs84(); 
+            Plan.PlanImage.FileName = "";
+            Plan.PlanImage.originalWgs84 = null;
             Plan.BackgroundBrush = null;
             grid1.InvalidateVisual();
         }
@@ -358,19 +355,19 @@ namespace csNavplan
         {
             Plan = new Plan();
 
-#if true
+#if false
             Random r = new Random();
-            for (var i = 0; i < 4; i++)
+            for (var i = 0; i < 5; i++)
             {
-                var w = new Waypoint();
-                w.XY = new Point(r.Next(100)/100.0, r.Next(100)/100.0);
+                var w = new NavPoint(new Point(r.Next(100) / 100.0, r.Next(100) / 100.0), 
+                    new Utm();
+                //w.XY = new Point(r.Next(100)/100.0, r.Next(100)/100.0);
                 w.isAction = r.Next(50) < 9;
                 Plan.Waypoints.Add(w);
             }
             Plan.Waypoints.Sort(c => c.Sequence);
 #endif
-
-            Plan.Waypoints.CollectionChanged += Waypoints_CollectionChanged;
+            //Plan.Waypoints.CollectionChanged += Waypoints_CollectionChanged;
         }
 
         private void Open_Click(object sender, RoutedEventArgs e)
@@ -378,6 +375,7 @@ namespace csNavplan
             OpenFileDialog d = new OpenFileDialog { Filter = "XML Plan Files|*.xml|All Files|*.*" };
             if (d.ShowDialog() ?? false)
                 Plan = Plan.Load(d.FileName);
+            Plan.BackgroundBrush = null;
             grid1.InvalidateVisual();
         }
 
@@ -389,8 +387,9 @@ namespace csNavplan
 
         private void Google_Click(object sender, RoutedEventArgs e)
         {
+            // todo google
             Plan.BackgroundBrush = null;
-            Plan.ImageFileName = "";
+            Plan.PlanImage.FileName = "";
             grid1.InvalidateVisual();
         }
 
@@ -399,10 +398,10 @@ namespace csNavplan
             OpenFileDialog d = new OpenFileDialog { Filter = "Image Files|*.bmp;*.jpg;*.jpeg;*.png;*.gif|All Files|*.*" };
             if (d.ShowDialog() ?? false)
             {
-                Plan.ImageFileName = d.FileName;
                 Plan.BackgroundBrush = null;
+                Plan.PlanImage = new PlanImage { FileName = d.FileName };
+                grid1.InvalidateVisual();
             }
-            grid1.InvalidateVisual();
         }
 
         private void SaveImage_Click(object sender, RoutedEventArgs e)
@@ -411,33 +410,36 @@ namespace csNavplan
             if (d.ShowDialog() ?? false)
             {
                 if (Plan.SaveImage(d.FileName))
-                    MainWindow.Toast("Image saved");
+                    MainWindow.Message("Image saved");
                 else
-                    MainWindow.Toast("Image save failed!");
+                    MainWindow.Message("Image save failed!");
             }
+        }
+
+        private void AddWaypoint(bool action)
+        {
+            //var pctPoint = new Point(lastMouseRightX / grid1.ActualWidth, lastMouseRightY / grid1.ActualHeight);
+            //var u = Plan.Pct2Utm(pctPoint);
+            //NavPoint wp = new NavPoint(pctPoint, u, action);
+            //Plan.Waypoints.Add(wp);
+            //grid1.InvalidateVisual();
         }
 
         private void Waypoint_Click(object sender, RoutedEventArgs e)
         {
-            Waypoint wp = new Waypoint { isAction = false };
-            wp.XY = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
-            Plan.Waypoints.Add(wp);
-            MainWindow.Toast("Waypoint added");
-            //grid1.InvalidateVisual();
+            AddWaypoint(false);
+            MainWindow.Message("Waypoint added");
         }
 
         private void ActionWaypoint_Click(object sender, RoutedEventArgs e)
         {
-            Waypoint wp = new Waypoint { isAction = true };
-            wp.XY = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
-            Plan.Waypoints.Add(wp);
-            MainWindow.Toast("Action Waypoint added");
-            // grid1.InvalidateVisual();
+            AddWaypoint(true);
+            MainWindow.Message("Action waypoint added");
         }
 
         private void Test_Click(object sender, RoutedEventArgs e)
         {
-            MainWindow.Toast("Test_Click");
+            MainWindow.Message("Test_Click");
             var w = new Wgs84 { Latitude = -122.3510883, Longitude = 47.6204584 };
             var u = Utm.FromWgs84(w);
 
@@ -448,13 +450,13 @@ namespace csNavplan
         {
             //Clipboard.SetText(Plan.GetNavCode(RulerHeading));
             Clipboard.SetText(Plan.WayPointsAsJson(RulerHeading));
-            MainWindow.Toast("Code pushed onto clipboard");
+            MainWindow.Message("Code pushed onto clipboard");
         }
 
         private void CommandBinding_Save(object sender, ExecutedRoutedEventArgs e)
         {
             Plan.Save(this);
-            MainWindow.Toast("Saved");
+            MainWindow.Message("Saved");
         }
 
         private void CommandBinding_Close(object sender, ExecutedRoutedEventArgs e)
@@ -464,12 +466,12 @@ namespace csNavplan
 
         private void OriginRC_Click(object sender, RoutedEventArgs e)
         {
-            Plan.RecalcOrigin();
+            //Plan.RecalcOrigin();
         }
 
         private void UtmRectRCRibbonButton_Click(object sender, RoutedEventArgs e)
         {
-            Plan.RecalcUtmRect();
+            Plan.RecalcViewSize();
         }
 
         private void RibbonGallery_SelectionChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
@@ -483,8 +485,8 @@ namespace csNavplan
         private void Publish_Click(object sender, RoutedEventArgs e)
         {
             MqttClient Mq;
-            string broker = "192.168.42.1";
-            //string broker = "127.0.0.1";
+            //string broker = "192.168.42.1";
+            string broker = "127.0.0.1";
             Mq = new MqttClient(broker);
             Mq.Connect("pNavPlan");
 

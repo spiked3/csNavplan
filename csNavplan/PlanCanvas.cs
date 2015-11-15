@@ -90,53 +90,52 @@ namespace csNavplan
 
             plan.RenderBackground(dc, this, GridSpacing);
 
-            DrawPlanPoint(dc, plan.Origin);
-            DrawPlanPoint(dc, plan.Align1);
-            DrawPlanPoint(dc, plan.Align2);
+            if (plan.Origin != null) DrawPlanPoint(dc, plan.Origin, plan);
+            if (plan.Align1 != null) DrawPlanPoint(dc, plan.Align1, plan);
+            if (plan.Align2 != null) DrawPlanPoint(dc, plan.Align2, plan);
 
             foreach (var w in plan.Waypoints)
-                DrawWaypoint(dc, w);
+                DrawWaypoint(dc, w, plan);
 
             if (RulerStart != null && RulerEnd != null)
                 dc.DrawLine(RulerPen, RulerStart.Value, RulerEnd.Value);
         }
 
-        private void DrawWaypoint(DrawingContext dc, Waypoint wp)
+        private void DrawWaypoint(DrawingContext dc, BasePoint p, Plan plan)
         {
-            FormattedText ft;
-            Point tp, p = new Point(wp.XY.X * ActualWidth, wp.XY.Y * ActualHeight);
-            Plan plan = (DataContext as MainWindow).Plan;
+            // todo DrawWaypoint
+            //FormattedText ft;
 
-            if (plan == null) return;
+            //Point drawPoint = new Point(plan.PlanImage.pctPoint.X * ActualWidth, plan.PlanImage.pctPoint.X * ActualHeight);
 
-            dc.DrawEllipse(wp.isAction ? ActionWpBrush : WpBrush,
-                null, p, markerRadius, markerRadius);
+            //dc.DrawEllipse(p.isAction ? ActionWpBrush : WpBrush,
+            //    null, drawPoint, markerRadius, markerRadius);
 
-            ft = new FormattedText($"{wp.Sequence}", Thread.CurrentThread.CurrentUICulture,
-                FlowDirection.LeftToRight, Typeface, NpEmSize, Brushes.Black);      // todo harcoded brush
-            tp = new Point(p.X - (ft.Width / 2), p.Y - markerRadius - 1);
-            dc.DrawText(ft, tp);
+            //ft = new FormattedText($"{p.Idx}", Thread.CurrentThread.CurrentUICulture,
+            //    FlowDirection.LeftToRight, Typeface, NpEmSize, Brushes.Black);      // todo harcoded brush
+            //Point textPoint = new Point(drawPoint.X - (ft.Width / 2), drawPoint.Y - markerRadius - 1);
+            //dc.DrawText(ft, textPoint);
 
-            var localXY = plan.Pct2Local(wp.XY);
-
-            ft = new FormattedText($"({localXY.X:F2}, {localXY.Y:F2})", Thread.CurrentThread.CurrentUICulture,
-                FlowDirection.LeftToRight, Typeface, NpEmSize, Foreground);
-            tp = new Point(p.X - (ft.Width / 2), p.Y + 4);
-            dc.DrawText(ft, tp);
+            //Point local = p.GetLocalXY(plan.Origin);
+            //ft = new FormattedText($"({local.X:F2}, {local.Y:F2})", Thread.CurrentThread.CurrentUICulture,
+            //    FlowDirection.LeftToRight, Typeface, NpEmSize, Foreground);
+            //textPoint = new Point(drawPoint.X - (ft.Width / 2), drawPoint.Y + 4);
+            //dc.DrawText(ft, textPoint);
         }
 
-        void DrawPlanPoint(DrawingContext dc, PlanPoint pp)
+        void DrawPlanPoint(DrawingContext dc, BasePoint p, Plan plan)
         {
+            // todo DrawPlanPoint
             // AB is the pctg point, XY is the local Coordinates
-            FormattedText ft;
-            Point tp, p = Pct2CanvasPoint(pp.Pct);
+            //FormattedText ft;
+            //Point drawPoint = Pct2CanvasPoint(p.GetLocalXY(Plan.Origin);
 
-            dc.DrawEllipse(AlignPointBrush, null, p, markerRadius, markerRadius);
+            //dc.DrawEllipse(AlignPointBrush, null, drawPoint, markerRadius, markerRadius);
 
-            ft = new FormattedText($"{pp.PointName}", Thread.CurrentThread.CurrentUICulture,
-                FlowDirection.LeftToRight, Typeface, NpEmSize, Foreground);
-            tp = new Point(p.X - (ft.Width / 2), p.Y + (markerRadius / 2) + 1);
-            dc.DrawText(ft, tp);
+            //ft = new FormattedText($"{p.Name}", Thread.CurrentThread.CurrentUICulture,
+            //    FlowDirection.LeftToRight, Typeface, NpEmSize, Foreground);
+            //Point tp = new Point(drawPoint.X - (ft.Width / 2), drawPoint.Y + (markerRadius / 2) + 1);
+            //dc.DrawText(ft, tp);
         }
     }
 }

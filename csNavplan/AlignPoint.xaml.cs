@@ -25,14 +25,14 @@ namespace csNavplan
 
         private void Gps_TextChanged(object sender, TextChangedEventArgs e)
         {
-            PlanPoint p = DataContext as PlanPoint;
+            INamedPoint p = DataContext as INamedPoint;
             if (p != null)
                 ScheduleUtmUpdate(p);
         }
 
         static readonly TimeSpan OneSecond = new TimeSpan(0, 0, 1);
 
-        private void ScheduleUtmUpdate(PlanPoint p)
+        private void ScheduleUtmUpdate(INamedPoint p)
         {
             if (p.dt == null)
             {
@@ -50,10 +50,13 @@ namespace csNavplan
         private void UtmUpdate(object sender, EventArgs e)
         {
             DispatcherTimer dt = sender as DispatcherTimer;
-            PlanPoint p = dt.Tag as PlanPoint;
-            if (p == null) System.Diagnostics.Debugger.Break();
-            if (!p.Wgs84.isZero)
-                p.Utm = Utm.FromWgs84(p.Wgs84);
+            INamedPoint p = dt.Tag as INamedPoint;
+
+            // todo this logic needs to change :|
+            //if (p == null) System.Diagnostics.Debugger.Break();
+            //if (p.AsWgs84() != null)
+            //    p.Utm = Utm.FromWgs84(p.AsWgs84());
+
             p.dt.Stop();
             p.dt = null;
         }

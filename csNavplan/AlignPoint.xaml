@@ -40,13 +40,13 @@
             <TextBlock Text="{Binding PointName,FallbackValue=PointName}" Foreground="White" />
         </Grid>
 
-        <TextBlock Text="Image(pct)" Grid.Row="1" />
-        <TextBlock Text="Local(XY)" Grid.Row="2" />
+        <TextBlock Text="pctPoint" Grid.Row="1" />
+        <TextBlock Text="LocalXY" Grid.Row="2" />
         <TextBlock Text="Wgs84" Grid.Row="3" />
         <TextBlock Text="UTM" Grid.Row="4" />
 
-        <TextBox Grid.Row="1" Text="{Binding Pct,StringFormat={}{0:F3}}" Grid.Column="1" />
-        <TextBox Grid.Row="2" Text="{Binding Local,StringFormat={}{0:F3}}" Grid.Column="1" />
+        <TextBox Grid.Row="1" Text="{Binding pctPoint,StringFormat={}{0:F3}}" Grid.Column="1" />
+        <TextBox Grid.Row="2" Text="{Binding LocalXY,StringFormat={}{0:F3}}" Grid.Column="1" />
         <TextBox Grid.Row="3" Text="{Binding Wgs84,StringFormat={}{0:F6},Converter={StaticResource Wgs84Converter}}" Grid.Column="1" TextChanged="Gps_TextChanged" />
         <TextBox Grid.Row="4" Text="{Binding Utm,StringFormat={}{0:F6},Converter={StaticResource UtmConverter}}" Grid.Column="1" TextChanged="Utm_TextChanged" />
 
