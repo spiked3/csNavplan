@@ -232,6 +232,12 @@ namespace csNavplan
         //        Waypoints[i].Idx = i+1;                        
         //}
 
+        static JsonSerializerSettings settings = new JsonSerializerSettings
+        {
+            TypeNameHandling = TypeNameHandling.All,
+            Formatting = Formatting.Indented
+        };
+
         public void Save(Window owner)
         {
             if (string.IsNullOrEmpty(PlanFilename))
@@ -239,14 +245,14 @@ namespace csNavplan
             else
             {
                 IsDirty = false;
-                string planString = JsonConvert.SerializeObject(this);
+                string planString = JsonConvert.SerializeObject(this, settings);
                 File.WriteAllText(PlanFilename, planString);
             }
         }
 
         public void SaveAs(Window owner)
         {
-            SaveFileDialog d = new SaveFileDialog { Filter = "XML Files|*.xml|All Files|*.*", DefaultExt = "xml" };            
+            SaveFileDialog d = new SaveFileDialog { Filter = "JSON Files|*.json|All Files|*.*", DefaultExt = "json" };            
             if (d.ShowDialog(owner) ?? false)
             {
                 PlanFilename = d.FileName;
@@ -263,12 +269,13 @@ namespace csNavplan
                 {
                     // Open the file to read from.
                     string planString = File.ReadAllText(filename);
-                    p = JsonConvert.DeserializeObject<Plan>(planString);
+                    p = JsonConvert.DeserializeObject<Plan>(planString, settings);
                     p.PlanFilename = filename;                                        
                     p.IsDirty = false;
                 }
                 catch (Exception)
                 {
+                    System.Diagnostics.Debugger.Break();
                     return new Plan();
                 }
             }
@@ -344,6 +351,7 @@ namespace csNavplan
 
         #endregion
 
+        [JsonIgnore]
         public ImageBrush Brush { get { return _Brush; } set { _Brush = value; OnPropertyChanged(); } }
         ImageBrush _Brush;
 
