@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
+using Newtonsoft.Json;
 
 namespace csNavplan
 {
@@ -40,6 +41,7 @@ namespace csNavplan
         public Point XY { get { return _XY; } set { _XY = value; OnPropertyChanged(); } }
         Point _XY = new Point(double.NaN, double.NaN);
 
+        [JsonConstructor]
         public LocalPoint(Point pp, Point xy, bool a = false)
         {
             PctPoint = pp;
@@ -59,6 +61,7 @@ namespace csNavplan
         public Utm Utm { get { return _Utm; } set { _Utm = value; OnPropertyChanged(); } }
         Utm _Utm;
 
+        [JsonConstructor]
         public WorldPoint(Point pct, Utm utm, bool isaction = false)
         {
             PctPoint = pct;

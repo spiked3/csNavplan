@@ -7,7 +7,7 @@
 
         <local:UtmConverter x:Key="UtmConverter" />
         <local:Wgs84Converter x:Key="Wgs84Converter" />
-        <local:InverseBooleanConverter x:Key="InverseBooleanConverter" />
+        <local:ColorToSolidColorBrushValueConverter x:Key="ColorToSolidColorBrushValueConverter" />
 
     </Application.Resources>
 </Application>

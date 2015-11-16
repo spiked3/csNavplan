@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:csNavplan"
         xmlns:xtk="http://schemas.xceed.com/wpf/xaml/toolkit"                 
         mc:Ignorable="d"
-        Title="{Binding WindowTitle}"
+        Title="{Binding WindowTitle}"              
         DataContext="{Binding RelativeSource={RelativeSource Self}}" Closing="Window_Closing" Loaded="Window_Loaded" d:DesignWidth="1046" d:DesignHeight="857" >
 
     <RibbonWindow.CommandBindings>
@@ -42,7 +42,7 @@
                     <RibbonSeparator />
                     <RibbonApplicationMenuItem Header="_Clear Image" Click="ClearImage_Click"  />
                     <RibbonApplicationMenuItem Header="_Import Image ..." Click="ImportImage_Click" />
-                    <RibbonApplicationMenuItem Header="Sa_ve Image ..." Click="SaveImage_Click" />
+                    <!--<RibbonApplicationMenuItem Header="Sa_ve Image ..." Click="SaveImage_Click" />-->
                     <RibbonSeparator />
                     <RibbonApplicationMenuItem Header="Color ..." Click="Color_Click" />
                 </RibbonApplicationMenu>
@@ -50,6 +50,14 @@
 
             <RibbonTab Header="Main">
                 <RibbonGroup Header="View">
+                    <StackPanel Orientation="Horizontal" >
+                        <Label Width="96" Content="Foreground " />
+                        <xtk:ColorPicker x:Name="ForeGroundColorPicker" Width="64" SelectedColor="White" SelectedColorChanged="ForeGroundColorPicker_SelectedColorChanged" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" >
+                        <Label Width="96" Content="GridColor " />
+                        <xtk:ColorPicker x:Name="GridColorPicker" Width="64" SelectedColor="LightGray" SelectedColorChanged="ForeGroundColorPicker_SelectedColorChanged" />
+                    </StackPanel>
                     <RibbonButton Content="Plan to Clipboard" Click="PlanToClipboard_Click" />
 
                     <!--<TextBlock Text="Grid Spacing" Margin="8,0" />-->
@@ -73,6 +81,9 @@
                     <RibbonButton Label="Publish" LargeImageSource="images/Document-02.png" Click="Publish_Click" />
                     <RibbonButton Label="Origin RC" Click="OriginRC_Click" LargeImageSource="images/House-07.png"  />
                     <RibbonButton Label="UtmRect RC" Click="UtmRectRCRibbonButton_Click" LargeImageSource="images/Maps -04.png" />
+                    <RibbonButton Label="UtmRect RC" Click="UtmRectRCRibbonButton_Click" LargeImageSource="images/Maps -04.png" />
+                    <RibbonButton Label="InvalidateVisual" Click="InvalidateVisual_Click" />
+                    <RibbonButton Label="Google" Click="Google_Click" />                    
                 </RibbonGroup>
             </RibbonTab>
         </Ribbon>
@@ -156,10 +167,12 @@
                 <ColumnDefinition />
                 <ColumnDefinition Width="220" />
             </Grid.ColumnDefinitions>
-            <local:PlanCanvas x:Name="grid1" Background="WhiteSmoke" AlignPointBrush="Yellow" Foreground="White" 
-                          MouseRightButtonDown="grid1_MouseRightButtonDown" MouseMove="grid1_MouseMove" MouseLeftButtonDown="grid1_MouseLeftButtonDown"
-                          MouseLeftButtonUp="grid1_MouseLeftButtonUp" MouseLeave="grid1_MouseLeave" 
-                              RenderTransformOrigin="0.5,0.5" MouseWheel="grid1_MouseWheel" >
+            <local:PlanCanvas x:Name="grid1" Background="WhiteSmoke" AlignPointBrush="#FF3CDE18" 
+                    Foreground="{Binding ElementName=ForeGroundColorPicker,Path=SelectedColor,Converter={StaticResource ColorToSolidColorBrushValueConverter}}" 
+                    GridColor="{Binding ElementName=GridColorPicker,Path=SelectedColor,Converter={StaticResource ColorToSolidColorBrushValueConverter}}" 
+                    MouseRightButtonDown="grid1_MouseRightButtonDown" MouseMove="grid1_MouseMove" MouseLeftButtonDown="grid1_MouseLeftButtonDown"
+                    MouseLeftButtonUp="grid1_MouseLeftButtonUp" MouseLeave="grid1_MouseLeave" 
+                    RenderTransformOrigin="0.5,0.5" MouseWheel="grid1_MouseWheel" >
                 <local:PlanCanvas.RenderTransform>
                     <TransformGroup>
                         <ScaleTransform ScaleX="{Binding Value,ElementName=zoom1}" ScaleY="{Binding Value,ElementName=zoom1}"/>

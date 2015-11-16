@@ -23,6 +23,13 @@ namespace csNavplan
         public static readonly DependencyProperty GridSpacingProperty =
             DependencyProperty.Register("GridSpacing", typeof(double), typeof(PlanCanvas), new PropertyMetadata(10.0));
 
+        public Brush GridColor
+        {
+            get { return (Brush)GetValue(GridColorProperty); }
+            set { SetValue(GridColorProperty, value); }
+        }
+        public static readonly DependencyProperty GridColorProperty =
+            DependencyProperty.Register("GridColor", typeof(Brush), typeof(PlanCanvas), new PropertyMetadata(new SolidColorBrush(Colors.LightGray)));
 
         public Brush Foreground
         {
@@ -90,37 +97,52 @@ namespace csNavplan
 
             plan.RenderBackground(dc, this, GridSpacing);
 
-            if (plan.Origin != null) DrawPlanPoint(dc, plan.Origin, plan);
-            if (plan.Align1 != null) DrawPlanPoint(dc, plan.Align1, plan);
-            if (plan.Align2 != null) DrawPlanPoint(dc, plan.Align2, plan);
+            if (plan.Origin != null) DrawWaypoint(dc, plan.Origin, plan, "Origin");
+            if (plan.Align1 != null) DrawAlignPoint(dc, plan.Align1, plan,"Align1");
+            if (plan.Align2 != null) DrawAlignPoint(dc, plan.Align2, plan, "Align2");
 
             foreach (var w in plan.Waypoints)
-                DrawWaypoint(dc, w, plan);
+                DrawWaypoint(dc, w, plan, "wpX");
 
             if (RulerStart != null && RulerEnd != null)
                 dc.DrawLine(RulerPen, RulerStart.Value, RulerEnd.Value);
         }
 
-        private void DrawWaypoint(DrawingContext dc, BasePoint p, Plan plan)
+        private void DrawAlignPoint(DrawingContext dc, BasePoint p, Plan plan, string v)
+        {
+            FormattedText ft;
+            Vector scale = new Vector(ActualWidth / plan.PlanImage.Width, ActualHeight / plan.PlanImage.Height);
+            Point drawPoint = new Point(p.PctPoint.X * plan.PlanImage.Width * scale.X, p.PctPoint.Y * plan.PlanImage.Height * scale.Y);
+
+            dc.DrawEllipse(AlignPointBrush, null, drawPoint, markerRadius, markerRadius);
+
+            ft = new FormattedText(v, Thread.CurrentThread.CurrentUICulture,
+                FlowDirection.LeftToRight, Typeface, NpEmSize, Foreground);
+            Point tp = new Point(drawPoint.X - (ft.Width / 2), drawPoint.Y + (markerRadius / 2) + 1);
+            dc.DrawText(ft, tp);
+        }
+
+        private void DrawWaypoint(DrawingContext dc, BasePoint p, Plan plan, string v)
         {
             // todo DrawWaypoint
-            //FormattedText ft;
+            FormattedText ft;
+            Vector scale = new Vector(ActualWidth / plan.PlanImage.Width, ActualHeight / plan.PlanImage.Height);    // todo move
 
-            //Point drawPoint = new Point(plan.PlanImage.pctPoint.X * ActualWidth, plan.PlanImage.pctPoint.X * ActualHeight);
+            Point drawPoint = new Point(p.PctPoint.X * plan.PlanImage.Width * scale.X, p.PctPoint.Y * plan.PlanImage.Height * scale.Y);
 
-            //dc.DrawEllipse(p.isAction ? ActionWpBrush : WpBrush,
-            //    null, drawPoint, markerRadius, markerRadius);
+            dc.DrawEllipse(p.isAction ? ActionWpBrush : WpBrush,
+                null, drawPoint, markerRadius, markerRadius);
 
-            //ft = new FormattedText($"{p.Idx}", Thread.CurrentThread.CurrentUICulture,
-            //    FlowDirection.LeftToRight, Typeface, NpEmSize, Brushes.Black);      // todo harcoded brush
-            //Point textPoint = new Point(drawPoint.X - (ft.Width / 2), drawPoint.Y - markerRadius - 1);
-            //dc.DrawText(ft, textPoint);
+            ft = new FormattedText(v, Thread.CurrentThread.CurrentUICulture,
+                FlowDirection.LeftToRight, Typeface, NpEmSize, Foreground);
+            Point textPoint = new Point(drawPoint.X - (ft.Width / 2), drawPoint.Y - markerRadius - 1);
+            dc.DrawText(ft, textPoint);
 
-            //Point local = p.GetLocalXY(plan.Origin);
-            //ft = new FormattedText($"({local.X:F2}, {local.Y:F2})", Thread.CurrentThread.CurrentUICulture,
-            //    FlowDirection.LeftToRight, Typeface, NpEmSize, Foreground);
-            //textPoint = new Point(drawPoint.X - (ft.Width / 2), drawPoint.Y + 4);
-            //dc.DrawText(ft, textPoint);
+            Point local = p.GetLocalXY(plan.Origin);
+            ft = new FormattedText($"({local.X:F2}, {local.Y:F2})", Thread.CurrentThread.CurrentUICulture,
+                FlowDirection.LeftToRight, Typeface, NpEmSize, Foreground);
+            textPoint = new Point(drawPoint.X - (ft.Width / 2), drawPoint.Y + 4);
+            dc.DrawText(ft, textPoint);
         }
 
         void DrawPlanPoint(DrawingContext dc, BasePoint p, Plan plan)

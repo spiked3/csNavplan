@@ -13,17 +13,6 @@ using Xceed.Wpf.Toolkit.PropertyGrid.Attributes;
 
 namespace csNavplan
 {
-
-    // todo this;
-       /*
-       if you have align1 & 2 - you have the Utm rect of the entire image
-       when you right click a point, other than align points, you can calculate the Utm by pct, and thus the gps as well
-       if you just hit ok in the dialog, those values are used. 
-       if you edit utm, if valid the gps is updated. it might not be a valid utm if we are using local points
-       if you edit gps, utm is updated
-       in both cases, screen pct points are recalculated, and draw at the correct position
-       */
-
     public class Plan : INotifyPropertyChanged
     {
         static readonly string API_KEY = "AIzaSyAik-F33VKp4evJfuwDD_YTmh38bBZRcOw";
@@ -39,6 +28,9 @@ namespace csNavplan
         }
 
         #endregion
+
+        public CoordinateType CoordinateType { get { return _CoordinateType; } set { _CoordinateType = value; OnPropertyChanged(); } }
+        CoordinateType _CoordinateType = CoordinateType.Local; 
 
         public bool IsDirty { get { return _IsDirty; } set { _IsDirty = value; OnPropertyChanged(); } }
         bool _IsDirty = false;
@@ -61,41 +53,26 @@ namespace csNavplan
         public BasePoint Align2 { get { return _Align2; } set { _Align2 = value; OnPropertyChanged(); } }
         BasePoint _Align2;
 
+        public bool isAligned { get { return Align1 != null && Align2 != null; } }
+
         [ExpandableObject]
         public BasePoint Origin { get { return _Origin; } set { _Origin = value; OnPropertyChanged(); } }
-        BasePoint _Origin; 
+        BasePoint _Origin;
 
         public WayPointCollection Waypoints { get { return _Waypoints; } set { _Waypoints = value; OnPropertyChanged(); } }
         WayPointCollection _Waypoints = new WayPointCollection();
 
         // size of the original image in meters, based on 2 align points
-        public Size ViewSize { get { return _ViewSize; } set { _ViewSize = value; OnPropertyChanged(); } }
-        Size _ViewSize; 
+        public Point ViewSize { get { return _ViewSize; } set { _ViewSize = value; OnPropertyChanged(); } }
+        Point _ViewSize;
 
         static Pen gridPen = new Pen(Brushes.Gray, 1.0);
 
         [JsonIgnore]
         public Brush BackgroundBrush;
 
-        string LastGoogleMapUri;        // hack for saving image
-
-        public bool SaveImage(string filename)
-        {
-            try
-            {
-                JpegBitmapEncoder encoder = new JpegBitmapEncoder();
-                encoder.Frames.Add(BitmapFrame.Create(new Uri(LastGoogleMapUri)));  // hack for saving image
-                using (var filestream = new FileStream(filename, FileMode.OpenOrCreate))
-                    encoder.Save(filestream);
-                PlanImage.FileName = filename;    // so it will load as image next run
-                return true;
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debugger.Break();
-            }
-            return false;
-        }
+        public string GoogleUri { get { return _GoogleUri; } set { _GoogleUri = value; OnPropertyChanged(); } }
+        string _GoogleUri = ""; 
 
         //public Utm Pct2Utm(Point a)
         //{
@@ -113,29 +90,27 @@ namespace csNavplan
         //    return Utm2Local(Pct2Utm(a));
         //}
 
-        // view rect is what dimensions in meters the view represents, now matter how it shown
-
+        // ViewSize is what dimensions in meters the view represents, now matter how it is shown
         public void RecalcViewSize()
         {
             if (Align1 != null && Align2 != null && Align1.GetType() == Align2.GetType())
             {
-                // todo in progress
                 double pctDistanceBetweenAlignsX = Math.Abs(Align2.PctPoint.X - Align1.PctPoint.X);
                 double pctDistanceBetweenAlignsY = Math.Abs(Align2.PctPoint.Y - Align1.PctPoint.Y);
 
                 if (Align1 is WorldPoint)
-                    ViewSize = new Size(
-                        (((WorldPoint)Align2).Utm.Easting - ((WorldPoint)Align1).Utm.Easting) / pctDistanceBetweenAlignsX,
-                        (((WorldPoint)Align2).Utm.Northing - ((WorldPoint)Align1).Utm.Northing) / pctDistanceBetweenAlignsY
+                    ViewSize = new Point(
+                        Math.Abs(((WorldPoint)Align2).Utm.Easting - ((WorldPoint)Align1).Utm.Easting) / pctDistanceBetweenAlignsX,
+                        Math.Abs(((WorldPoint)Align2).Utm.Northing - ((WorldPoint)Align1).Utm.Northing) / pctDistanceBetweenAlignsY
                     );
                 else
-                    ViewSize = new Size(
-                        (((LocalPoint)Align2).XY.X - ((LocalPoint)Align1).XY.X) / pctDistanceBetweenAlignsX,
-                        (((LocalPoint)Align2).XY.Y - ((LocalPoint)Align1).XY.Y) / pctDistanceBetweenAlignsY
+                    ViewSize = new Point(
+                        Math.Abs(((LocalPoint)Align2).XY.X - ((LocalPoint)Align1).XY.X) / pctDistanceBetweenAlignsX,
+                        Math.Abs(((LocalPoint)Align2).XY.Y - ((LocalPoint)Align1).XY.Y) / pctDistanceBetweenAlignsY
                     );
             }
 
-            var t = $"Plan::RecalcViewSize = ({ViewSize.Width:F5}, {ViewSize.Height:F5})";
+            var t = $"Plan::RecalcViewSize = ({ViewSize.X:F5}, {ViewSize.Y:F5})";
             MainWindow.Message(t);
             System.Diagnostics.Trace.WriteLine(t);
         }
@@ -170,26 +145,21 @@ namespace csNavplan
                     PlanImage.Height = PlanImage.Brush.ImageSource.Height;
                     MainWindow.Message("Loaded local Image for background");
                 }
-                else if (PlanImage.originalWgs84 != null)
-                {
-                    //int zoom = (int)ImageData.Local.X; // todo not the best UI, gets value from an unused point
-                    int zoom = 19;  // todo kludge
+                //else if (PlanImage.originalWgs84 != null)
+                //{
+                //    PlanImage.FileName = ""; // indicates we did not load an image from disk
 
-                    PlanImage.FileName = ""; // indicates we did not load an image from disk
+                //    //GoogleUri = "https://maps.googleapis.com/maps/api/staticmap?maptype=satellite&" +
+                //    //    $"center={PlanImage.originalWgs84.Latitude},{PlanImage.originalWgs84.Longitude}&" +
+                //    //    $"size={(int)pc.ActualWidth}x{(int)pc.ActualHeight}&" +
+                //    //    $"zoom={zoom}&" +
+                //    //    $"key={API_KEY}";
 
-                    // https://groups.google.com/forum/#!topic/google-maps-js-api-v3/hDRO4oHVSeM
-
-                    LastGoogleMapUri = "https://maps.googleapis.com/maps/api/staticmap?maptype=satellite&" +
-                        $"center={PlanImage.originalWgs84.Latitude},{PlanImage.originalWgs84.Longitude}&" +
-                        $"size={(int)pc.ActualWidth}x{(int)pc.ActualHeight}&" +
-                        $"zoom={zoom}&" +
-                        $"key={API_KEY}";
-
-                    BackgroundBrush = (ImageBrush)PlanImage;
-                    PlanImage.Width = pc.ActualWidth;
-                    PlanImage.Height = pc.ActualHeight;
-                    MainWindow.Message("Fetched GoogleMap for background");
-                }
+                //    BackgroundBrush = (ImageBrush)PlanImage;
+                //    PlanImage.Width = pc.ActualWidth;
+                //    PlanImage.Height = pc.ActualHeight;
+                //    MainWindow.Message("Fetched GoogleMap for background");
+                //}
             }
             else if (BackgroundBrush == null)
             {
@@ -232,7 +202,7 @@ namespace csNavplan
         //        Waypoints[i].Idx = i+1;                        
         //}
 
-        static JsonSerializerSettings settings = new JsonSerializerSettings
+        static readonly JsonSerializerSettings settings = new JsonSerializerSettings
         {
             TypeNameHandling = TypeNameHandling.All,
             Formatting = Formatting.Indented
@@ -252,7 +222,7 @@ namespace csNavplan
 
         public void SaveAs(Window owner)
         {
-            SaveFileDialog d = new SaveFileDialog { Filter = "JSON Files|*.json|All Files|*.*", DefaultExt = "json" };            
+            SaveFileDialog d = new SaveFileDialog { Filter = "JSON Files|*.json|All Files|*.*", DefaultExt = "json" };
             if (d.ShowDialog(owner) ?? false)
             {
                 PlanFilename = d.FileName;
@@ -270,7 +240,7 @@ namespace csNavplan
                     // Open the file to read from.
                     string planString = File.ReadAllText(filename);
                     p = JsonConvert.DeserializeObject<Plan>(planString, settings);
-                    p.PlanFilename = filename;                                        
+                    p.PlanFilename = filename;
                     p.IsDirty = false;
                 }
                 catch (Exception)
@@ -365,13 +335,10 @@ namespace csNavplan
         public double Height { get { return _Height; } set { _Height = value; OnPropertyChanged(); } }
         double _Height = 0;
 
-        public Wgs84 originalWgs84 { get { return _originalWgs84; } set { _originalWgs84 = value; OnPropertyChanged(); } }
-
-        Wgs84 _originalWgs84 = null;
-
         public void Load()
         {
             Brush = new ImageBrush(new BitmapImage(new Uri(FileName)));
         }
     }
+    public enum CoordinateType { Local, World }
 }

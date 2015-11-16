@@ -2,12 +2,14 @@
 using Newtonsoft.Json;
 using System;
 using System.ComponentModel;
+using System.IO;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Ribbon;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using uPLibrary.Networking.M2Mqtt;
 
 namespace csNavplan
@@ -19,8 +21,6 @@ namespace csNavplan
             get { return (float )GetValue(RulerLengthProperty); }
             set { SetValue(RulerLengthProperty, value); }
         }
-
-        // Using a DependencyProperty as the backing store for RulerLength.  This enables animation, styling, binding, etc...
         public static readonly DependencyProperty RulerLengthProperty =
             DependencyProperty.Register("RulerLength", typeof(float ), typeof(MainWindow), new PropertyMetadata(0F));
 
@@ -228,48 +228,59 @@ namespace csNavplan
         private void Align1_Click(object sender, RoutedEventArgs e)
         {
             var pctPoint = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
-            var d = new NavPointEditDlg(pctPoint);
+            var d = new NavPointEditDlg(pctPoint, null, Plan.CoordinateType);
+            d.Owner = this;
+            d.Left = lastMouseRightX;
+            d.Top = lastMouseRightY;
             d.ShowDialog();
             if (d.DialogResult ?? false)
             {
                 Plan.Align1 = d.Final;
                 grid1.InvalidateVisual();
-                Plan.OnPropertyChanged(null);   // todo ?? no longer needed?
+                Plan.OnPropertyChanged(null);  
                 Plan.RecalcViewSize();
             }
         }
 
-        // todo kinda code smell, in the way we handle matching world vs local align points
-        // we allow align1 to be anything, we require align 2 to match it
-        // recalc skips if not matched (ie align1 was changed after align2 created)
         private void Align2_Click(object sender, RoutedEventArgs e)
         {
             var pctPoint = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
-            for (;;)
+            var d = new NavPointEditDlg(pctPoint, null, Plan.CoordinateType);
+            d.Owner = this;
+            d.Left = lastMouseRightX;
+            d.Top = lastMouseRightY;
+            d.ShowDialog();
+            if (d.DialogResult ?? false)
             {
-                var d = new NavPointEditDlg(pctPoint);
-                d.ShowDialog();
-                if (d.DialogResult ?? false)
-                {
-                    if (Plan.Align1 != null && Plan.Align1.GetType() != d.Final.GetType())
-                    {
-                        MessageBox.Show("Align types must be same (World v Local)", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                        continue;
-                    }
-
-                    Plan.Align2 = d.Final;
-                    grid1.InvalidateVisual();
-                    Plan.OnPropertyChanged(null);
-                    Plan.RecalcViewSize();
-                    return;
-                }
-                else
-                    return;
+                Plan.Align2 = d.Final;
+                grid1.InvalidateVisual();
+                Plan.OnPropertyChanged(null);
+                Plan.RecalcViewSize();
             }
         }
 
         private void Origin_Click(object sender, RoutedEventArgs e)
         {
+            if (!Plan.isAligned)
+            {
+                MessageBox.Show("Set align points first", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            Point pctPoint = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
+
+            //---R
+            //+ I am here
+            
+            // todo calculate XY in align point terms
+            // NavPointEditDlg to allow tweaking
+            // recalc actual pctPoint based on final
+
+            Plan.Origin = new LocalPoint(pctPoint, new Point(0, 0));
+
+            grid1.InvalidateVisual();
+            Plan.OnPropertyChanged(null);
+            Plan.RecalcViewSize();
         }
 
         bool mouseDragStarted = false;
@@ -345,15 +356,26 @@ namespace csNavplan
 
         private void ClearImage_Click(object sender, RoutedEventArgs e)
         {
-            Plan.PlanImage.FileName = "";
-            Plan.PlanImage.originalWgs84 = null;
-            Plan.BackgroundBrush = null;
+            Plan.PlanImage = null;
             grid1.InvalidateVisual();
         }
 
         private void New_Click(object sender, RoutedEventArgs e)
         {
+            var d = MessageBox.Show(this, "Use World Coordinates?", "Coordinates type", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+            if (d == MessageBoxResult.Cancel)
+                return;
             Plan = new Plan();
+
+            Settings1.Default.lastPlan = null;
+            Settings1.Default.Save();
+
+            if (d == MessageBoxResult.Yes)
+                Plan.CoordinateType = CoordinateType.World;
+            else
+                Plan.CoordinateType = CoordinateType.Local;
+
+            WindowTitle = $"Navigation Planner, New Plan, {(Plan.CoordinateType == CoordinateType.World ? "World" : "Local")} coordinates";
 
 #if false
             Random r = new Random();
@@ -372,7 +394,7 @@ namespace csNavplan
 
         private void Open_Click(object sender, RoutedEventArgs e)
         {
-            OpenFileDialog d = new OpenFileDialog { Filter = "XML Plan Files|*.xml|All Files|*.*" };
+            OpenFileDialog d = new OpenFileDialog { Filter = "JSON Plan Files|*.json|All Files|*.*" };
             if (d.ShowDialog() ?? false)
                 Plan = Plan.Load(d.FileName);
             Plan.BackgroundBrush = null;
@@ -387,10 +409,28 @@ namespace csNavplan
 
         private void Google_Click(object sender, RoutedEventArgs e)
         {
-            // todo google
-            Plan.BackgroundBrush = null;
-            Plan.PlanImage.FileName = "";
-            grid1.InvalidateVisual();
+            try
+            {
+                // todo google - need to extract the image portion
+                // or use the API which seems to be an older image
+
+                JpegBitmapEncoder encoder = new JpegBitmapEncoder();
+                encoder.Frames.Add(BitmapFrame.Create(new Uri(Clipboard.GetText())));
+
+                SaveFileDialog s = new SaveFileDialog { };
+                if (!s.ShowDialog(this) ?? false)
+                    return;
+
+                Plan.PlanImage = new PlanImage();
+                Plan.PlanImage.FileName = s.FileName;
+                using (var filestream = new FileStream(Plan.PlanImage.FileName, FileMode.OpenOrCreate))
+                    encoder.Save(filestream);
+            }
+
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debugger.Break();
+            }
         }
 
         private void ImportImage_Click(object sender, RoutedEventArgs e)
@@ -404,17 +444,17 @@ namespace csNavplan
             }
         }
 
-        private void SaveImage_Click(object sender, RoutedEventArgs e)
-        {
-            SaveFileDialog d = new SaveFileDialog { Filter = "JPG Files|*.jpg", DefaultExt = "jpg" };
-            if (d.ShowDialog() ?? false)
-            {
-                if (Plan.SaveImage(d.FileName))
-                    MainWindow.Message("Image saved");
-                else
-                    MainWindow.Message("Image save failed!");
-            }
-        }
+        //private void SaveImage_Click(object sender, RoutedEventArgs e)
+        //{
+        //    SaveFileDialog d = new SaveFileDialog { Filter = "JPG Files|*.jpg", DefaultExt = "jpg" };
+        //    if (d.ShowDialog() ?? false)
+        //    {
+        //        if (Plan.SaveImage(d.FileName))
+        //            MainWindow.Message("Image saved");
+        //        else
+        //            MainWindow.Message("Image save failed!");
+        //    }
+        //}
 
         private void AddWaypoint(bool action)
         {
@@ -440,10 +480,30 @@ namespace csNavplan
         private void Test_Click(object sender, RoutedEventArgs e)
         {
             MainWindow.Message("Test_Click");
+
+            var pctPoint = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
+
+            Point targetLoc = new Point(lastMouseRightX, lastMouseRightY);
             var w = new Wgs84 { Latitude = -122.3510883, Longitude = 47.6204584 };
             var u = Utm.FromWgs84(w);
+            var temp = new WorldPoint(pctPoint, u);
+            //var temp = new LocalPoint(pctPoint, new Point(0,0));
 
-            System.Diagnostics.Debugger.Break();
+            var d = new NavPointEditDlg(pctPoint, temp);
+
+            d.Owner = this;                        
+            d.Left = targetLoc.X;
+            d.Top = targetLoc.Y;            
+
+            d.ShowDialog();
+
+            if (d.DialogResult ?? false)
+            {
+                string t = d.Final is WorldPoint ? "WorldPoint" : "LocalPoint";
+                MainWindow.Message($"Dialog returned {t} ");
+            }
+
+            //System.Diagnostics.Debugger.Break();
         }
 
         private void PlanToClipboard_Click(object sender, RoutedEventArgs e)
@@ -498,6 +558,18 @@ namespace csNavplan
             Mq.Disconnect();
         }
 
+        private void InvalidateVisual_Click(object sender, RoutedEventArgs e)
+        {
+            grid1.InvalidateVisual();
+        }
+
+        private void ForeGroundColorPicker_SelectedColorChanged(object sender, RoutedPropertyChangedEventArgs<Color?> e)
+        {
+            if (grid1 != null)
+                grid1.InvalidateVisual();
+        }
+
+ 
         private void Color_Click(object sender, RoutedEventArgs e)
         {
             new ColorsDlg().Show();

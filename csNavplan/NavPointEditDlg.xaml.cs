@@ -20,6 +20,29 @@ namespace csNavplan
         BasePoint Original;
         public BasePoint Final { get; set; }
 
+        public CoordinateType CoordinateType
+        {
+            get { return (CoordinateType)GetValue(CoordinateTypeProperty); }
+            set { SetValue(CoordinateTypeProperty, value); }
+        }
+        public static readonly DependencyProperty CoordinateTypeProperty =
+            DependencyProperty.Register("CoordinateType", typeof(CoordinateType), typeof(NavPointEditDlg), new PropertyMetadata(CoordinateType.Local));
+
+        public string Type
+        {
+            get { return (CoordinateType)GetValue(CoordinateTypeProperty) == CoordinateType.World ? "World Coordinate" : "Local Coordinate"; }
+        }
+
+        public Visibility WorldGridVisible
+        {
+            get { return (CoordinateType)GetValue(CoordinateTypeProperty) == CoordinateType.World ? Visibility.Visible : Visibility.Hidden  ; }
+        }
+
+        public Visibility LocalGridVisible
+        {
+            get { return (CoordinateType)GetValue(CoordinateTypeProperty) == CoordinateType.Local ? Visibility.Visible : Visibility.Hidden; }
+        }
+
         public Utm Utm
         {
             get { return (Utm)GetValue(UtmProperty); }
@@ -44,65 +67,37 @@ namespace csNavplan
         public static readonly DependencyProperty XYProperty =
             DependencyProperty.Register("XY", typeof(Point), typeof(NavPointEditDlg), new PropertyMetadata(new Point()));
 
-        public bool? IsWorld
-        {
-            get { return (bool?)GetValue(IsWorldProperty); }
-            set { SetValue(IsWorldProperty, value); }
-        }
-        public static readonly DependencyProperty IsWorldProperty =
-            DependencyProperty.Register("IsWorld", typeof(bool?), typeof(NavPointEditDlg), new PropertyMetadata(false, OnIsWorldChanged));
-
-        public Visibility WorldGridVisible
-        {
-            get { return (Visibility)GetValue(WorldGridVisibleProperty); }
-            set { SetValue(WorldGridVisibleProperty, value); }
-        }
-        public static readonly DependencyProperty WorldGridVisibleProperty =
-            DependencyProperty.Register("WorldGridVisible", typeof(Visibility), typeof(NavPointEditDlg), new PropertyMetadata(Visibility.Hidden));
-
-        public Visibility LocalGridVisible
-        {
-            get { return (Visibility)GetValue(LocalGridVisibleProperty); }
-            set { SetValue(LocalGridVisibleProperty, value); }
-        }
-        public static readonly DependencyProperty LocalGridVisibleProperty =
-            DependencyProperty.Register("LocalGridVisible", typeof(Visibility), typeof(NavPointEditDlg), new PropertyMetadata(Visibility.Visible));
-
         Point PctPoint;
 
-        public NavPointEditDlg(Point pp)  // create a new point w given pctPoint
+        public NavPointEditDlg(Point pp, BasePoint a = null, CoordinateType t = CoordinateType.Local ) // if a == null it is for a new point
         {
+            DataContext = this;
             PctPoint = pp;
-            DataContext = this;
-            IsWorld = false;
-            InitializeComponent();
-        }
-
-        public NavPointEditDlg(BasePoint a)
-        {
-            System.Diagnostics.Debug.Assert(a != null);
-            PctPoint = a.PctPoint;
-
-            if (a is WorldPoint)
-            {
-                Utm = ((WorldPoint)a).Utm;
-                Wgs84 = (Wgs84)Utm;
-                IsWorld = true;
-            }
-            else if (a is LocalPoint)
-            {
-                XY = ((LocalPoint)a).XY;
-                IsWorld = false;
-            }
-
             Original = a;
-            DataContext = this;
+
+            if (Original != null)
+            {
+                if (Original is WorldPoint)
+                {
+                    Utm = ((WorldPoint)Original).Utm;
+                    Wgs84 = (Wgs84)Utm;
+                    CoordinateType = CoordinateType.World;
+                }
+                else if (Original is LocalPoint)
+                {
+                    XY = ((LocalPoint)Original).XY;
+                    CoordinateType = CoordinateType.Local;
+                }
+            }
+            else
+                CoordinateType = t;
+
             InitializeComponent();
         }
 
         private void OK_Click(object sender, RoutedEventArgs e)
         {
-            if (IsWorld ?? false)
+            if (CoordinateType == CoordinateType.World)
                 Final = new WorldPoint(PctPoint, Utm);
             else
                 Final = new LocalPoint(PctPoint, XY);
@@ -117,40 +112,31 @@ namespace csNavplan
             Close();
         }
 
-        static void OnIsWorldChanged(DependencyObject source, DependencyPropertyChangedEventArgs ea)
-        {
-            var v = ((NavPointEditDlg)source).IsWorld ?? false;
-            source.SetValue(WorldGridVisibleProperty, v ? Visibility.Visible : Visibility.Hidden);
-            source.SetValue(LocalGridVisibleProperty, v ? Visibility.Hidden : Visibility.Visible);
-        }
-
-        static bool dontUpdate = false;
-        //static readonly TimeSpan updateDelay = new TimeSpan(0, 0, 1);
-        //public DispatcherTimer dt;  // used by edit dlg to re-calc wgs <-> utm
+        static bool autoUpdateInProgress = false;
 
         static void OnWgs84Changed(DependencyObject source, DependencyPropertyChangedEventArgs ea)
         {
-            if (!dontUpdate)
+            if (!autoUpdateInProgress)
             {
-                dontUpdate = true;
+                autoUpdateInProgress = true;
                 Wgs84 a = (Wgs84)source.GetValue(Wgs84Property);
                 if (a != null)
                     source.SetValue(UtmProperty, a.GetUtm());
             }
             else
-                dontUpdate = false;
+                autoUpdateInProgress = false;
         }
 
         static void OnUtmChanged(DependencyObject source, DependencyPropertyChangedEventArgs ea)
         {
-            if (!dontUpdate)
+            if (!autoUpdateInProgress)
             {
                 Utm a = (Utm)source.GetValue(UtmProperty);
                 if (a != null)
                     source.SetValue(Wgs84Property, (Wgs84)a);
             }
             else
-                dontUpdate = false;
+                autoUpdateInProgress = false;
         }
     }
 }

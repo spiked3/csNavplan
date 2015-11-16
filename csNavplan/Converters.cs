@@ -5,30 +5,37 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Media;
 
 namespace csNavplan
 {
-    [ValueConversion(typeof(bool), typeof(bool))]
-    public class InverseBooleanConverter : IValueConverter
+    public class ColorToSolidColorBrushValueConverter : IValueConverter
     {
-        public object Convert(object value, Type targetType, object parameter,
-            System.Globalization.CultureInfo culture)
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
-            if (targetType != typeof(System.Windows.Visibility))
-                throw new InvalidOperationException("The target must be a boolean");
+            if (null == value)
+            {
+                return null;
+            }
+            // For a more sophisticated converter, check also the targetType and react accordingly..
+            if (value is Color)
+            {
+                Color color = (Color)value;
+                return new SolidColorBrush(color);
+            }
+            // You can support here more source types if you wish
+            // For the example I throw an exception
 
-           //---C
-           // todo I am here, seems to be not firing when radio button clicked
-            return ((RadioButton)value).IsChecked ?? false ?
-                System.Windows.Visibility.Hidden :
-                System.Windows.Visibility.Visible;
+            Type type = value.GetType();
+            throw new InvalidOperationException("Unsupported type [" + type.Name + "]");
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter,
-            System.Globalization.CultureInfo culture)
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
-            throw new NotSupportedException();
-        }
+            // If necessary, here you can convert back. Check if which brush it is (if its one),
+            // get its Color-value and return it.
 
+            throw new NotImplementedException();
+        }
     }
 }

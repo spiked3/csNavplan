@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:csNavplan"
         mc:Ignorable="d"
         DataContext="{Binding RelativeSource={RelativeSource Self}}"
-        Title="NavPointEdit" Height="189" Width="392" ResizeMode="NoResize">
+        Title="NavPointEdit" Height="206" Width="392" ResizeMode="NoResize">
 
     <Grid>
         <Grid.Resources >
@@ -20,12 +20,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <GroupBox VerticalAlignment="Center" Grid.Row="0" Margin="8" >
-            <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="0,0,32,0" >
-                <RadioButton Content="World" IsChecked="{Binding IsWorld}"/>
-                <RadioButton Content="Local" IsChecked="True" />
-            </StackPanel>
-        </GroupBox>
+        <TextBlock Text="{Binding Type,FallbackValue=CoordinateType}" VerticalAlignment="Center" Grid.Row="0" Margin="8" />
 
         <Grid x:Name="WorldGrid" Grid.Row="1" Margin="8" Visibility="{Binding WorldGridVisible}">
             <Grid.RowDefinitions>
