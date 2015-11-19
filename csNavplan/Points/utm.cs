@@ -37,16 +37,22 @@ namespace csNavplan
 
         public bool isZero { get { return Math.Abs(_Easting) + Math.Abs(_Northing) == 0.0; } }
 
-        public static explicit operator Wgs84(Utm  p)
+        public static explicit operator Wgs84(Utm p)
         {
             return Wgs84.FromUtm(p);
+        }
+
+        public Utm(double e, double n, string t)
+        {
+            Easting = e;
+            Northing = n;
+            Zone = t;    
         }
 
         static public Utm FromWgs84(Wgs84 w)
         {
             if (w == null)
                 return null;
-            Utm u = new Utm();
             const double a = 6378137; //WGS84
             const double eccSquared = 0.00669438; //WGS84
             const double k0 = 0.9996;
@@ -74,7 +80,7 @@ namespace csNavplan
             double LongOriginRad = LongOrigin * deg2rad;
 
             //compute the UTM Zone from the latitude and longitude
-            u.Zone = ZoneNumber.ToString() + UTMLetterDesignator(w.Latitude);
+            string Zone = ZoneNumber.ToString() + UTMLetterDesignator(w.Latitude);
 
             const double eccPrimeSquared = (eccSquared) / (1 - eccSquared);
 
@@ -88,15 +94,15 @@ namespace csNavplan
                             + (15 * eccSquared * eccSquared / 256 + 45 * eccSquared * eccSquared * eccSquared / 1024) * Math.Sin(4 * LatRad)
                             - (35 * eccSquared * eccSquared * eccSquared / 3072) * Math.Sin(6 * LatRad));
 
-            u.Easting = k0 * N * (A + (1 - T + C) * A * A * A / 6 + (5 - 18 * T + T * T + 72 * C - 58 * eccPrimeSquared)
+            double Easting = k0 * N * (A + (1 - T + C) * A * A * A / 6 + (5 - 18 * T + T * T + 72 * C - 58 * eccPrimeSquared)
                 * A * A * A * A * A / 120) + 500000.0;
 
-            u.Northing = k0 * (M + N * Math.Tan(LatRad) * (A * A / 2 + (5 - T + 9 * C + 4 * C * C) * A * A * A * A / 24
+            double Northing = k0 * (M + N * Math.Tan(LatRad) * (A * A / 2 + (5 - T + 9 * C + 4 * C * C) * A * A * A * A / 24
                 + (61 - 58 * T + T * T + 600 * C - 330 * eccPrimeSquared) * A * A * A * A * A * A / 720));
             if (w.Latitude < 0)
-                u.Northing += 10000000.0; //10000000 meter offset for southern hemisphere
+                Northing += 10000000.0; //10000000 meter offset for southern hemisphere
 
-            return u;
+            return new Utm(Easting, Northing, Zone);
         }
 
         public Wgs84 AsWgs84()
@@ -156,7 +162,7 @@ namespace csNavplan
                     double x = double.Parse(tokens[0]);
                     double y = double.Parse(tokens[1]);
                     string z = tokens[2];
-                    return new Utm { Easting = x, Northing = y, Zone = z };
+                    return new Utm(x, y, z);
                 }
                 catch (Exception)
                 {

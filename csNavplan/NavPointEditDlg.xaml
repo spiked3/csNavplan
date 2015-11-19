@@ -6,7 +6,8 @@
         xmlns:local="clr-namespace:csNavplan"
         mc:Ignorable="d"
         DataContext="{Binding RelativeSource={RelativeSource Self}}"
-        Title="NavPointEdit" Height="206" Width="392" ResizeMode="NoResize">
+        SizeToContent="WidthAndHeight"
+        Title="NavPointEdit" ResizeMode="NoResize">
 
     <Grid>
         <Grid.Resources >
@@ -84,16 +85,12 @@
         <StackPanel Orientation="Horizontal" Grid.Row="2" HorizontalAlignment="Center" >
             <StackPanel.Resources>
                 <Style TargetType="Button" >
-                    <Setter Property="Margin" Value="8,4,8,12" />
+                    <Setter Property="Margin" Value="12" />
                     <Setter Property="Padding" Value="12,4" />
                     <Setter Property="HorizontalAlignment" Value="Center" />
                 </Style>
-                <Style TargetType="RadioButton" >
-                    <Setter Property="Margin" Value="8,4,8,12" />
-                    <Setter Property="VerticalAlignment" Value="Center" />
-                </Style>
             </StackPanel.Resources>
-            <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="32,0,0,0" >
+            <StackPanel Orientation="Horizontal" Grid.Row="1" >
                 <Button Content="OK" IsDefault="True" Click="OK_Click" />
                 <Button Content="Cancel" IsCancel="True" Click="Cancel_Click" />
             </StackPanel>

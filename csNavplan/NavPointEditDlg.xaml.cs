@@ -97,6 +97,9 @@ namespace csNavplan
 
         private void OK_Click(object sender, RoutedEventArgs e)
         {
+            while (autoUpdateInProgress)
+                Dispatcher.Invoke(DispatcherPriority.Background, new Action(delegate { }));
+
             if (CoordinateType == CoordinateType.World)
                 Final = new WorldPoint(PctPoint, Utm);
             else
@@ -131,6 +134,7 @@ namespace csNavplan
         {
             if (!autoUpdateInProgress)
             {
+                autoUpdateInProgress = true;
                 Utm a = (Utm)source.GetValue(UtmProperty);
                 if (a != null)
                     source.SetValue(Wgs84Property, (Wgs84)a);

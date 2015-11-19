@@ -38,6 +38,12 @@ namespace csNavplan
             return Utm.FromWgs84(p);
         }
 
+        public Wgs84(double longi, double latti)
+        {
+            Longitude = longi;
+            Latitude = latti;
+        }
+
         public static Wgs84 FromUtm(Utm u)
         {
             if (u == null)
@@ -78,11 +84,10 @@ namespace csNavplan
             var delt = Math.Atan(senoheps / (Math.Cos(nab)));
             var tao = Math.Atan(Math.Cos(delt) * Math.Tan(nab));
 
-            Wgs84 w_out = new Wgs84
-            {
-                Longitude = ((delt * (180.0 / Math.PI)) + s) + diflon,
-                Latitude = ((lat + (1 + e2cuadrada * Math.Pow(Math.Cos(lat), 2) - (3.0 / 2.0) * e2cuadrada * Math.Sin(lat) * Math.Cos(lat) * (tao - lat)) * (tao - lat)) * (180.0 / Math.PI)) + diflat
-            };
+            Wgs84 w_out = new Wgs84(
+                ((delt * (180.0 / Math.PI)) + s) + diflon,
+                ((lat + (1 + e2cuadrada * Math.Pow(Math.Cos(lat), 2) - (3.0 / 2.0) * e2cuadrada * Math.Sin(lat) * Math.Cos(lat) * (tao - lat)) * (tao - lat)) * (180.0 / Math.PI)) + diflat
+            );
             return w_out;
         }
 
@@ -131,7 +136,7 @@ namespace csNavplan
                     var tokens = ((string)value).Split(',');
                     double x = double.Parse(tokens[0]);
                     double y = double.Parse(tokens[1]);
-                    return new Wgs84 { Longitude = y, Latitude = x };
+                    return new Wgs84(y,x);
                 }
                 catch (Exception)
                 {

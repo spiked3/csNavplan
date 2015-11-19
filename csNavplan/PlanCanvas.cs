@@ -23,14 +23,6 @@ namespace csNavplan
         public static readonly DependencyProperty GridSpacingProperty =
             DependencyProperty.Register("GridSpacing", typeof(double), typeof(PlanCanvas), new PropertyMetadata(10.0));
 
-        public Brush GridColor
-        {
-            get { return (Brush)GetValue(GridColorProperty); }
-            set { SetValue(GridColorProperty, value); }
-        }
-        public static readonly DependencyProperty GridColorProperty =
-            DependencyProperty.Register("GridColor", typeof(Brush), typeof(PlanCanvas), new PropertyMetadata(new SolidColorBrush(Colors.LightGray)));
-
         public Brush Foreground
         {
             get { return (Brush)GetValue(ForegroundProperty); }
@@ -71,9 +63,6 @@ namespace csNavplan
         public static readonly DependencyProperty TypefaceProperty =
             DependencyProperty.Register("Typeface", typeof(Typeface), typeof(PlanCanvas), new PropertyMetadata(new Typeface("Arial")));
 
-        public Point? RulerStart { get; set; }
-        public Point? RulerEnd { get; set; }
-
         static Brush originBrush = Brushes.White;
         static Brush alignBrush = Brushes.Cyan;
         static Pen RulerPen = new Pen(Brushes.White, 4.0);
@@ -97,15 +86,15 @@ namespace csNavplan
 
             plan.RenderBackground(dc, this, GridSpacing);
 
-            if (plan.Origin != null) DrawWaypoint(dc, plan.Origin, plan, "Origin");
+            if (plan.Origin != null) DrawAlignPoint(dc, plan.Origin, plan, "Origin");
             if (plan.Align1 != null) DrawAlignPoint(dc, plan.Align1, plan,"Align1");
             if (plan.Align2 != null) DrawAlignPoint(dc, plan.Align2, plan, "Align2");
 
             foreach (var w in plan.Waypoints)
-                DrawWaypoint(dc, w, plan, "wpX");
+                DrawNavpoint(dc, w, plan, (plan.Waypoints.IndexOf(w) + 1).ToString());
 
-            if (RulerStart != null && RulerEnd != null)
-                dc.DrawLine(RulerPen, RulerStart.Value, RulerEnd.Value);
+            // todo ruler
+            //dc.DrawLine(RulerPen, plan.RulerStart ?? new Point(0,0), plan.RulerEnd ?? new Point(0,0));
         }
 
         private void DrawAlignPoint(DrawingContext dc, BasePoint p, Plan plan, string v)
@@ -122,9 +111,8 @@ namespace csNavplan
             dc.DrawText(ft, tp);
         }
 
-        private void DrawWaypoint(DrawingContext dc, BasePoint p, Plan plan, string v)
+        private void DrawNavpoint(DrawingContext dc, BasePoint p, Plan plan, string v)
         {
-            // todo DrawWaypoint
             FormattedText ft;
             Vector scale = new Vector(ActualWidth / plan.PlanImage.Width, ActualHeight / plan.PlanImage.Height);    // todo move
 

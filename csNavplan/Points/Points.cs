@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
 using Newtonsoft.Json;
+using Xceed.Wpf.Toolkit.PropertyGrid.Attributes;
 
 namespace csNavplan
 {
@@ -36,6 +37,7 @@ namespace csNavplan
         public abstract Point GetLocalXY(BasePoint origin);
     }
 
+    [ExpandableObject]
     public class LocalPoint : BasePoint
     {
         public Point XY { get { return _XY; } set { _XY = value; OnPropertyChanged(); } }
@@ -51,10 +53,16 @@ namespace csNavplan
 
         public override Point GetLocalXY(BasePoint origin)
         {
-            return XY;  // asumes origin xy is 0,0
+            if (origin == null)
+                return new Point(0, 0);
+            if (!(origin is LocalPoint))
+                throw new InvalidOperationException();
+            LocalPoint o = (LocalPoint)origin;
+            return new Point(XY.X - o.XY.X, XY.Y - o.XY.Y);
         }
     }
 
+    [ExpandableObject]
     public class WorldPoint : BasePoint
     {
         // only Utm for world point is stored, wgs is calculated on the fly as needed
@@ -78,9 +86,11 @@ namespace csNavplan
 
         public override Point GetLocalXY(BasePoint origin)
         {
+            if (origin == null)
+                return new Point(0, 0);
             if (!(origin is WorldPoint))
                 throw new InvalidOperationException();
-            var o = origin as WorldPoint;
+            WorldPoint o = (WorldPoint)origin;
             return new Point(Utm.Easting - o.Utm.Easting, Utm.Northing - o.Utm.Northing);
         }
 

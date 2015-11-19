@@ -13,6 +13,8 @@ using Xceed.Wpf.Toolkit.PropertyGrid.Attributes;
 
 namespace csNavplan
 {
+    // todo save brushes
+
     public class Plan : INotifyPropertyChanged
     {
         static readonly string API_KEY = "AIzaSyAik-F33VKp4evJfuwDD_YTmh38bBZRcOw";
@@ -35,9 +37,6 @@ namespace csNavplan
         public bool IsDirty { get { return _IsDirty; } set { _IsDirty = value; OnPropertyChanged(); } }
         bool _IsDirty = false;
 
-        //public bool IsValid { get { return _IsValid; } set { _IsValid = value; OnPropertyChanged(); } }
-        //bool _IsValid = false; 
-
         public string PlanFilename { get { return _PlanFilename; } set { _PlanFilename = value; OnPropertyChanged(); } }
         string _PlanFilename;
 
@@ -59,6 +58,8 @@ namespace csNavplan
         public BasePoint Origin { get { return _Origin; } set { _Origin = value; OnPropertyChanged(); } }
         BasePoint _Origin;
 
+        public bool isOriginValid { get { return isAligned && Origin != null; } }
+
         public WayPointCollection Waypoints { get { return _Waypoints; } set { _Waypoints = value; OnPropertyChanged(); } }
         WayPointCollection _Waypoints = new WayPointCollection();
 
@@ -66,35 +67,44 @@ namespace csNavplan
         public Point ViewSize { get { return _ViewSize; } set { _ViewSize = value; OnPropertyChanged(); } }
         Point _ViewSize;
 
-        static Pen gridPen = new Pen(Brushes.Gray, 1.0);
+        // XY location in meters of lower left based on Align1, of original image
+        public Point ViewOrigin { get { return _ViewOrigin; } set { _ViewOrigin = value; OnPropertyChanged(); } }
+        Point _ViewOrigin; 
 
+        // todo implement ruler
+        public BasePoint RulerStart { get { return _RulerStart; } set { _RulerStart = value; OnPropertyChanged(); } }
+        BasePoint _RulerStart;
+        public BasePoint RulerEnd { get { return _RulerEnd; } set { _RulerEnd = value; OnPropertyChanged(); } }
+        BasePoint _RulerEnd;
+
+        [JsonIgnore]
+        static readonly JsonSerializerSettings settings = new JsonSerializerSettings
+        {
+            TypeNameHandling = TypeNameHandling.All,
+            Formatting = Formatting.Indented
+        };
         [JsonIgnore]
         public Brush BackgroundBrush;
 
+        public string ForegroundColor { get { return _ForegroundColor; } set { _ForegroundColor = value; OnPropertyChanged(); } }
+        string _ForegroundColor = Colors.Black.ToString(); 
+
+        [JsonIgnore]
+        public Pen GridPen { get { return _GridPen; } set { _GridPen = value; OnPropertyChanged(); } }
+        Pen _GridPen = new Pen(Brushes.Gray, 1.0);
+
+        // todo finish up google
         public string GoogleUri { get { return _GoogleUri; } set { _GoogleUri = value; OnPropertyChanged(); } }
         string _GoogleUri = ""; 
 
-        //public Utm Pct2Utm(Point a)
-        //{
-        //    return new Utm { Easting = UtmLeft + (a.X * UtmWidth),
-        //        Northing = UtmTop + (a.Y * UtmHeight), Zone = "10T" };  // hack hardcoded zone
-        //}
-
-        //public Point Utm2Local(Utm utm)
-        //{
-        //    return new Point((utm?.Easting - Origin?.Utm.Easting ?? double.NaN), (utm?.Northing - Origin?.Utm.Northing ?? double.NaN));
-        //}
-
-        //public Point Pct2Local(Point a)
-        //{
-        //    return Utm2Local(Pct2Utm(a));
-        //}
-
         // ViewSize is what dimensions in meters the view represents, now matter how it is shown
-        public void RecalcViewSize()
+        // ViewOrigin is calculated from align1
+        public void RecalcView()
         {
-            if (Align1 != null && Align2 != null && Align1.GetType() == Align2.GetType())
+            if (isAligned)
             {
+                System.Diagnostics.Debug.Assert(Align1.GetType() == Align2.GetType());
+
                 double pctDistanceBetweenAlignsX = Math.Abs(Align2.PctPoint.X - Align1.PctPoint.X);
                 double pctDistanceBetweenAlignsY = Math.Abs(Align2.PctPoint.Y - Align1.PctPoint.Y);
 
@@ -108,33 +118,63 @@ namespace csNavplan
                         Math.Abs(((LocalPoint)Align2).XY.X - ((LocalPoint)Align1).XY.X) / pctDistanceBetweenAlignsX,
                         Math.Abs(((LocalPoint)Align2).XY.Y - ((LocalPoint)Align1).XY.Y) / pctDistanceBetweenAlignsY
                     );
-            }
 
-            var t = $"Plan::RecalcViewSize = ({ViewSize.X:F5}, {ViewSize.Y:F5})";
-            MainWindow.Message(t);
-            System.Diagnostics.Trace.WriteLine(t);
+                if (Align1 is WorldPoint)
+                {
+                    var a1 = (WorldPoint)Align1; 
+                    ViewOrigin = 
+                        new Point(a1.Utm.Easting - (a1.PctPoint.X * ViewSize.X ), a1.Utm.Northing - (a1.PctPoint.Y * ViewSize.Y));
+                }
+                else
+                    ViewOrigin = new Point(((LocalPoint)Align1).XY.X, ((LocalPoint)Align1).XY.Y);
+
+                var t = $"Plan::RecalcView Origin({ViewOrigin.X:F5}, {ViewOrigin.Y:F5}), Size({ViewSize.X:F5}, {ViewSize.Y:F5})";
+                MainWindow.Message(t);
+                System.Diagnostics.Trace.WriteLine(t);
+            }
         }
 
-        //internal void RecalcOrigin()
-        //{
-        //    if (IsValid)
-        //    {
-        //        Origin.Utm = new Utm
-        //        {
-        //            Easting = UtmLeft + (Origin.pctPoint.X * UtmWidth),
-        //            Northing = UtmTop + (Origin.pctPoint.Y * UtmHeight),
-        //            Zone = "10T"
-        //        };   // hack hardcoded zone
+        //percents are view relative, XY are coordinate relative (up y is positive)
+        // locals work, dont touch
+        public BasePoint NavPointAtPctPoint(Point pp)
+        {
+            if (!isAligned)
+            {
+                System.Diagnostics.Debugger.Break();
+                return null;
+            }
 
-        //        var t = $"Plan::RecalcOrigin = ({Origin.Utm})";
-        //        MainWindow.Toast(t);
-        //        System.Diagnostics.Trace.WriteLine(t);
-        //    }
-        //}
+            // size in meters
+            var xPos = pp.X * ViewSize.X;
+            var yPos = ViewSize.Y - (pp.Y * ViewSize.Y);
+
+            if (CoordinateType == CoordinateType.Local)
+                return new LocalPoint(pp, new Point(xPos, yPos));
+            else
+                return new WorldPoint(pp, new Utm(ViewOrigin.X + xPos, ViewOrigin.Y + yPos, ((WorldPoint)Align1).Utm.Zone));
+        }
+
+        public Point PctPointAtNavPoint(BasePoint point)
+        {
+            if (!isAligned)
+            {
+                System.Diagnostics.Debugger.Break();
+                throw new NotImplementedException();
+            }
+            if (CoordinateType == CoordinateType.Local)
+                return new Point(((LocalPoint)point).XY.X / ViewSize.X,
+                    1 - ((LocalPoint)point).XY.Y / ViewSize.Y);
+            else
+            {
+                //+here, 
+                var x = ((WorldPoint)point).Utm.Easting - ViewOrigin.X;
+                var y = ((WorldPoint)point).Utm.Northing + ViewOrigin.Y;
+                return new Point(x / ViewSize.X, 1 -(y / ViewSize.Y));
+            }
+        }
 
         public void RenderBackground(DrawingContext dc, PlanCanvas pc, double gridSpacing)
         {
-            // draw image, fetch from google if it has not been already fetched
             if (BackgroundBrush == null && PlanImage != null)
             {
                 if (PlanImage.FileName?.Length > 0)
@@ -145,21 +185,6 @@ namespace csNavplan
                     PlanImage.Height = PlanImage.Brush.ImageSource.Height;
                     MainWindow.Message("Loaded local Image for background");
                 }
-                //else if (PlanImage.originalWgs84 != null)
-                //{
-                //    PlanImage.FileName = ""; // indicates we did not load an image from disk
-
-                //    //GoogleUri = "https://maps.googleapis.com/maps/api/staticmap?maptype=satellite&" +
-                //    //    $"center={PlanImage.originalWgs84.Latitude},{PlanImage.originalWgs84.Longitude}&" +
-                //    //    $"size={(int)pc.ActualWidth}x{(int)pc.ActualHeight}&" +
-                //    //    $"zoom={zoom}&" +
-                //    //    $"key={API_KEY}";
-
-                //    BackgroundBrush = (ImageBrush)PlanImage;
-                //    PlanImage.Width = pc.ActualWidth;
-                //    PlanImage.Height = pc.ActualHeight;
-                //    MainWindow.Message("Fetched GoogleMap for background");
-                //}
             }
             else if (BackgroundBrush == null)
             {
@@ -179,34 +204,21 @@ namespace csNavplan
                 var startX = Origin.PctPoint.X * pc.ActualWidth;
                 var startY = Origin.PctPoint.Y * pc.ActualHeight;
 
-                // todo
-                //var oneMeterX = pc.ActualWidth / UtmWidth;
-                //var oneMeterY = pc.ActualHeight / UtmHeight;
+                var oneMeterX = pc.ActualWidth / ViewSize.X;
+                var oneMeterY = pc.ActualHeight / ViewSize.Y;
 
-                //var reps = Math.Max(UtmWidth / gridSpacing, UtmHeight / gridSpacing);
+                var reps = Math.Max(ViewSize.X / gridSpacing, ViewSize.Y / gridSpacing);
 
-                //for (int i = 0; i < (int)(reps + 1); i++)
-                //{
-                //    dc.DrawLine(gridPen, new Point(startX + (i * oneMeterX * gridSpacing), 0), new Point(startX + (i * oneMeterX * gridSpacing), pc.ActualHeight));
-                //    dc.DrawLine(gridPen, new Point(startX - (i * oneMeterX * gridSpacing), 0), new Point(startX - (i * oneMeterX * gridSpacing), pc.ActualHeight));
+                for (int i = 0; i < (int)(reps + 1); i++)
+                {
+                    dc.DrawLine(GridPen, new Point(startX + (i * oneMeterX * gridSpacing), 0), new Point(startX + (i * oneMeterX * gridSpacing), pc.ActualHeight));
+                    dc.DrawLine(GridPen, new Point(startX - (i * oneMeterX * gridSpacing), 0), new Point(startX - (i * oneMeterX * gridSpacing), pc.ActualHeight));
 
-                //    dc.DrawLine(gridPen, new Point(0, startY + (i * oneMeterY * gridSpacing)), new Point(pc.ActualWidth, startY + (i * oneMeterY * gridSpacing)));
-                //    dc.DrawLine(gridPen, new Point(0, startY - (i * oneMeterY * gridSpacing)), new Point(pc.ActualWidth, startY - (i * oneMeterY * gridSpacing)));
-                //}
+                    dc.DrawLine(GridPen, new Point(0, startY + (i * oneMeterY * gridSpacing)), new Point(pc.ActualWidth, startY + (i * oneMeterY * gridSpacing)));
+                    dc.DrawLine(GridPen, new Point(0, startY - (i * oneMeterY * gridSpacing)), new Point(pc.ActualWidth, startY - (i * oneMeterY * gridSpacing)));
+                }
             }
         }
-
-        //internal void ResetSequenceNumbers()
-        //{
-        //    for (var i = 0; i < Waypoints.Count; i++)
-        //        Waypoints[i].Idx = i+1;                        
-        //}
-
-        static readonly JsonSerializerSettings settings = new JsonSerializerSettings
-        {
-            TypeNameHandling = TypeNameHandling.All,
-            Formatting = Formatting.Indented
-        };
 
         public void Save(Window owner)
         {
@@ -241,6 +253,7 @@ namespace csNavplan
                     string planString = File.ReadAllText(filename);
                     p = JsonConvert.DeserializeObject<Plan>(planString, settings);
                     p.PlanFilename = filename;
+                    p.RecalcView();
                     p.IsDirty = false;
                 }
                 catch (Exception)
@@ -256,54 +269,18 @@ namespace csNavplan
         {
             // todo someday maybe some sort of templates
             StringBuilder b = new StringBuilder($"{{\"ResetHdg\":{initialHeading},\"WayPoints\":[");
-            //bool firstTime = true;
-            //foreach (Waypoint w in Waypoints)
-            //{
-            //    if (!firstTime)
-            //        b.Append(",");
-            //    else
-            //        firstTime = false;
-            //    //Point local = Pct2Local(w.XY);
-            //    Point local = w.LocalXY;
-            //    b.AppendLine($"[{local.X}, {local.Y}, {(w.isAction?1:0)}]");    // Turn/Move version
-            //}
+            bool firstTime = true;
+            foreach (BasePoint w in Waypoints)
+            {
+                if (!firstTime)
+                    b.Append(",");
+                else
+                    firstTime = false;
+                //Point local = Pct2Local(w.XY);
+                Point local = w.GetLocalXY(Origin);
+                b.AppendLine($"[{local.X}, {local.Y}, {(w.isAction ? 1 : 0)}]");
+            }
             return b.AppendLine($"]}}").ToString();
-        }
-
-        internal string GetNavCode(float initialHeading)
-        {
-            //double X=0, Y=0;
-            // todo someday maybe some sort of templates
-            StringBuilder b = new StringBuilder();
-            //b.AppendLine("Pilot = Pilot.Factory(\"192.168.42.1\");");
-            //b.AppendLine("Pilot.OnPilotReceive += Pilot_OnReceive;");
-            //// old b.AppendLine("Pilot.Send(new { Cmd = \"CONFIG\", Geom = new float[] { 336.2F, 450F } });");
-            //b.AppendLine("Pilot.Send(new { Cmd = \"CONFIG\", Geom = new float[] { 336.2F, 450F }, M1 = new int[] { 1, -1 }, M2 = new int[] { -1, 1 } });");
-
-            //b.AppendLine($"Pilot.Send(new {{ Cmd = \"RESET\", Hdg = {initialHeading:F1} }});");
-            //b.AppendLine("Pilot.Send(new { Cmd = \"ESC\", Value = 1 });");
-            //foreach (Waypoint w in Waypoints)
-            //{
-            //    Point local = w.LocalXY;
-
-            //    //b.AppendLine($"//Send(new {{ Cmd = \"GOTO\", X={local.X:F3}, Y={local.Y:F3}, Pwr = 40.0F }});");    // gotoxy version
-
-            //    var _x = local.X - X;
-            //    var _y = local.Y - Y;
-
-            //    var hdgToNxt = (Math.Atan2(_y, _x) * 180.0 / Math.PI) + 90.0;
-            //    var distToNext = Math.Sqrt((_x * _x) + (_y * _y));
-
-            //    b.AppendLine($"Pilot.Send(new {{ Cmd = \"ROT\", Hdg={hdgToNxt:F1}, Pwr = 40.0F }});");    // Turn/Move version
-            //    b.AppendLine("Pilot.waitForEvent();");
-            //    b.AppendLine($"Pilot.Send(new {{ Cmd = \"MOV\", Dist={distToNext:F1}, Pwr = 40.0F }});");
-            //    b.AppendLine("Pilot.waitForEvent();");
-
-            //    X = local.X;
-            //    Y = local.Y;
-            //}
-            //b.AppendLine("Pilot.Send(new { Cmd = \"ESC\", Value = 0 });");
-            return b.ToString();
         }
     }
 
