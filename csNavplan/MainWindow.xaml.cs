@@ -15,6 +15,10 @@ using uPLibrary.Networking.M2Mqtt;
 namespace csNavplan
 {
     // todo add an exit button on ribbon bar
+    // todo When editting local points, the numbers shown should be Origin relative, not view relative
+    // this might be harder than you think, but would help a few places
+    // every basePoint, must have a reference to plan, but then has access to origin, instead of requiring a parameter.
+    // I think we do not create BasePoints now unless we are aligned+origin, so should be ok.
     public partial class MainWindow : RibbonWindow
     {
         public float  RulerLength
@@ -121,7 +125,6 @@ namespace csNavplan
         public static readonly DependencyProperty PropertyGridObjectProperty =
             DependencyProperty.Register("PropertyGridObject", typeof(Object), typeof(MainWindow));
 
-
         double lastMouseRightX, lastMouseRightY;
 
         #region StatusMessage
@@ -220,7 +223,7 @@ namespace csNavplan
             if (Plan == null)
                 New_Click(this, null);
 
-            Plan.Waypoints.CollectionChanged += Waypoints_CollectionChanged;
+            Plan.WayPoints.CollectionChanged += Waypoints_CollectionChanged;
             grid1.InvalidateVisual();
             WindowTitle = $"Navigation Planner, {Plan.PlanFilename}{(Plan.IsDirty ? '*' : ' ')}";
         }
@@ -323,20 +326,16 @@ namespace csNavplan
         {
             if (Plan == null || !Plan.isAligned)
                 return;
+
+            // todo some visual indicators as mouse moves
+
             MouseXY = e.GetPosition(grid1);
             MousePctA = new Point(MouseXY.X / grid1.ActualWidth, MouseXY.Y / grid1.ActualHeight);
-
-            //MouseLocal = Plan.NavPointAtPctPoint(MousePctA).GetLocalXY(Plan.Origin);
 
             if (Plan.Origin == null)
                 return;
 
             MouseLocal = Plan.NavPointAtPctPoint(MousePctA).GetLocalXY(Plan.Origin);
-
-            // todo some visual indicator as you move a mouse
-            //MouseUtm = Plan.Pct2Utm(MousePct);
-            //MouseLocal = Plan.Utm2Local(MouseUtm);
-            //MouseGps = MouseUtm.AsWgs84();
 
             if (mouseDragStarted)
             {
@@ -513,7 +512,7 @@ namespace csNavplan
             if (d.DialogResult ?? false)
             {
                 d.Final.PctPoint = Plan.PctPointAtNavPoint(d.Final);
-                Plan.Waypoints.Add(d.Final);
+                Plan.WayPoints.Add(d.Final);
                 grid1.InvalidateVisual();
             }
         }
@@ -578,17 +577,12 @@ namespace csNavplan
             Close();
         }
 
-        private void OriginRC_Click(object sender, RoutedEventArgs e)
-        {
-            //Plan.RecalcOrigin();
-        }
-
-        private void UtmRectRCRibbonButton_Click(object sender, RoutedEventArgs e)
+        private void RecalcView_Click(object sender, RoutedEventArgs e)
         {
             Plan.RecalcView();
         }
 
-        private void RibbonGallery_SelectionChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        private void GridSize_Changed(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
             var t = ((sender as RibbonGallery).SelectedItem as RibbonGalleryItem).Content.ToString();
             double g = double.Parse(t);

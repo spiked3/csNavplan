@@ -49,7 +49,7 @@
             </Ribbon.ApplicationMenu>
 
             <RibbonTab Header="Main">
-                
+
                 <RibbonGroup Header="View">
                     <StackPanel Orientation="Horizontal" >
                         <Label Width="96" Content="Foreground " />
@@ -63,7 +63,7 @@
                     <RibbonButton Label="Google" Click="Google_Click" LargeImageSource="images/Google Drive.png" Margin="12,0" />
 
                     <RibbonComboBox Label="Grid Spacing" >
-                        <RibbonGallery x:Name="spacingCombobox1" SelectedValue="10" SelectedValuePath="Content" MaxColumnCount="1" SelectionChanged="RibbonGallery_SelectionChanged" >
+                        <RibbonGallery x:Name="spacingCombobox1" SelectedValue="10" SelectedValuePath="Content" MaxColumnCount="1" SelectionChanged="GridSize_Changed" >
                             <RibbonGalleryCategory>
                                 <RibbonGalleryItem Content=".1" />
                                 <RibbonGalleryItem Content="1"  />
@@ -77,18 +77,16 @@
                         <Slider x:Name="zoom1" Minimum="1" Maximum="5" Width="96" Margin="12,0"/>
                     </StackPanel>
                 </RibbonGroup>
-                
+
                 <RibbonGroup Header="">
                     <RibbonButton Label="Publish" LargeImageSource="images/Document-02.png" Click="Publish_Click" />
                 </RibbonGroup>
 
                 <RibbonGroup Header="Temp" >
-                    <RibbonButton Label="Origin RC" Click="OriginRC_Click" LargeImageSource="images/House-07.png"  />
-                    <RibbonButton Label="UtmRect RC" Click="UtmRectRCRibbonButton_Click" LargeImageSource="images/Maps -04.png" />
-                    <RibbonButton Label="UtmRect RC" Click="UtmRectRCRibbonButton_Click" LargeImageSource="images/Maps -04.png" />
-                    <RibbonButton Label="InvalidateVisual" Click="InvalidateVisual_Click" />
+                    <RibbonButton Label="ReCalc View" Click="RecalcView_Click" LargeImageSource="images/Maps -04.png"  />
+                    <RibbonButton Label="Invalidate Visual" Click="InvalidateVisual_Click" LargeImageSource="images/File-Format-JPEG.png" />
                 </RibbonGroup>
-                
+
             </RibbonTab>
         </Ribbon>
 
@@ -147,7 +145,7 @@
             </StatusBarItem>
         </StatusBar>
 
-        <Expander x:Name="alignmentExpander" DockPanel.Dock="Right" ExpandDirection="Left" IsExpanded="False" >
+        <Expander x:Name="alignmentExpander" DockPanel.Dock="Right" ExpandDirection="Left" IsExpanded="true" >
             <Expander.Header>
                 <TextBlock Text="Alignment Points">
                     <TextBlock.LayoutTransform>

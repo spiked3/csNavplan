@@ -60,8 +60,8 @@ namespace csNavplan
 
         public bool isOriginValid { get { return isAligned && Origin != null; } }
 
-        public WayPointCollection Waypoints { get { return _Waypoints; } set { _Waypoints = value; OnPropertyChanged(); } }
-        WayPointCollection _Waypoints = new WayPointCollection();
+        public WayPointCollection WayPoints { get { return _WayPoints; } set { _WayPoints = value; OnPropertyChanged(); } }
+        WayPointCollection _WayPoints = new WayPointCollection();
 
         // size of the original image in meters, based on 2 align points
         public Point ViewSize { get { return _ViewSize; } set { _ViewSize = value; OnPropertyChanged(); } }
@@ -270,7 +270,7 @@ namespace csNavplan
             // todo someday maybe some sort of templates
             StringBuilder b = new StringBuilder($"{{\"ResetHdg\":{initialHeading},\"WayPoints\":[");
             bool firstTime = true;
-            foreach (BasePoint w in Waypoints)
+            foreach (BasePoint w in WayPoints)
             {
                 if (!firstTime)
                     b.Append(",");

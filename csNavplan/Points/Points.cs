@@ -35,6 +35,7 @@ namespace csNavplan
         public string isActionString { get { return isAction ? "Action" : "Normal"; } }
 
         public abstract Point GetLocalXY(BasePoint origin);
+
     }
 
     [ExpandableObject]

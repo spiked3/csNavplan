@@ -90,8 +90,8 @@ namespace csNavplan
             if (plan.Align1 != null) DrawAlignPoint(dc, plan.Align1, plan,"Align1");
             if (plan.Align2 != null) DrawAlignPoint(dc, plan.Align2, plan, "Align2");
 
-            foreach (var w in plan.Waypoints)
-                DrawNavpoint(dc, w, plan, (plan.Waypoints.IndexOf(w) + 1).ToString());
+            foreach (var w in plan.WayPoints)
+                DrawNavpoint(dc, w, plan, (plan.WayPoints.IndexOf(w) + 1).ToString());
 
             // todo ruler
             //dc.DrawLine(RulerPen, plan.RulerStart ?? new Point(0,0), plan.RulerEnd ?? new Point(0,0));

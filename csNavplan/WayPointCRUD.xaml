@@ -8,6 +8,17 @@
              DataContext="{Binding RelativeSource={RelativeSource Self}}"
              d:DesignHeight="300" d:DesignWidth="300">
     <Grid Background="#FF5B5B5B">
+        <Grid.Resources>
+            <Style TargetType="Button" >
+                <Setter Property="Width" Value="46" />
+                <Setter Property="Margin" Value="4" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+            </Style>
+            <Style TargetType="TextBlock" >
+                <Setter Property="Margin" Value="4" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+            </Style>
+        </Grid.Resources>
         <Grid.RowDefinitions>
             <RowDefinition Height="36"/>
             <RowDefinition Height="36"/>
@@ -15,22 +26,14 @@
         </Grid.RowDefinitions>
         <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center" Margin="4" Text="WayPoints" Foreground="White"/>
         <StackPanel Orientation="Horizontal" Grid.Row="1" Background="#FFA9E0F5" >
-            <StackPanel.Resources>
-                <Style TargetType="Button" >
-                    <Setter Property="Width" Value="46" />
-                    <Setter Property="Margin" Value="4" />
-                </Style>
-            </StackPanel.Resources>
-            <!--<Button Content="Create" />-->
             <Button Content="Up" Click="Up_Click" />
             <Button Content="Down" Click="Down_Click" />
             <Button Content="Delete" Click="Delete_Click" />
-            <Button Content="Renum" Click="Renum_Click" />
         </StackPanel>
-        <ListView x:Name="waypointListView1" ItemsSource="{Binding Waypoints}" Grid.Row="2" 
+        <ListBox x:Name="waypointListView1" ItemsSource="{Binding WayPoints}" Grid.Row="2" 
                   ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
-                  HorizontalContentAlignment="Center">
-            <ListView.ItemTemplate>
+                  HorizontalContentAlignment="Center" AlternationCount="999">
+            <ListBox.ItemTemplate>
                 <DataTemplate>
                     <DataTemplate.Triggers>
                         <DataTrigger Binding="{Binding isAction}" Value="True" >
@@ -38,24 +41,24 @@
                         </DataTrigger>
                     </DataTemplate.Triggers>
                     <Grid x:Name="waypoint1" Background="LightGray" Width="192" >
-                        <Grid.RowDefinitions >
-                            <RowDefinition />
-                            <RowDefinition />
-                        </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions >
-                            <ColumnDefinition />
-                            <ColumnDefinition />
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="2*" />
+                            <ColumnDefinition Width="2*" />
+                            <ColumnDefinition Width="2*" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="{Binding Sequence}" HorizontalAlignment="Center" />
-                        <CheckBox  IsChecked="{Binding isAction}" Grid.Column="1" >
+                        <TextBlock Grid.Column="0" Text="{Binding RelativeSource={RelativeSource TemplatedParent},
+                                      Path=(ItemsControl.AlternationIndex)}" />
+                        <CheckBox   Grid.Column="2" IsChecked="{Binding isAction}">
                             <TextBlock Text="Action" />
                         </CheckBox>
-                        <TextBox Text="{Binding Local,StringFormat={}{0:F3}}" Grid.Row="1" Margin="2,1" />
-                        <Button Content="Edit" Grid.Row="1" Grid.Column="1" Margin="4" Click="Edit_Click" />
+                        <!--<TextBox Text="{Binding Local,StringFormat={}{0:F3}}" Grid.Row="1" Margin="2,1" />-->
+                        <Button Content="Edit" Grid.Column="3" Margin="4" Click="Edit_Click" />
+                        <TextBlock Grid.Column="1" Text="{Binding XY,StringFormat=F1}" />
                     </Grid>
                 </DataTemplate>
-            </ListView.ItemTemplate>
+            </ListBox.ItemTemplate>
 
-        </ListView>
+        </ListBox>
     </Grid>
 </UserControl>
