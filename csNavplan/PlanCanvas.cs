@@ -97,7 +97,7 @@ namespace csNavplan
             //dc.DrawLine(RulerPen, plan.RulerStart ?? new Point(0,0), plan.RulerEnd ?? new Point(0,0));
         }
 
-        private void DrawAlignPoint(DrawingContext dc, BasePoint p, Plan plan, string v)
+        private void DrawAlignPoint(DrawingContext dc, BaseNavPoint p, Plan plan, string v)
         {
             FormattedText ft;
             Vector scale = new Vector(ActualWidth / plan.PlanImage.Width, ActualHeight / plan.PlanImage.Height);
@@ -111,7 +111,7 @@ namespace csNavplan
             dc.DrawText(ft, tp);
         }
 
-        private void DrawNavpoint(DrawingContext dc, BasePoint p, Plan plan, string v)
+        private void DrawNavpoint(DrawingContext dc, BaseNavPoint p, Plan plan, string v)
         {
             FormattedText ft;
             Vector scale = new Vector(ActualWidth / plan.PlanImage.Width, ActualHeight / plan.PlanImage.Height);    // todo move
@@ -133,7 +133,7 @@ namespace csNavplan
             dc.DrawText(ft, textPoint);
         }
 
-        void DrawPlanPoint(DrawingContext dc, BasePoint p, Plan plan)
+        void DrawPlanPoint(DrawingContext dc, BaseNavPoint p, Plan plan)
         {
             // todo DrawPlanPoint
             // AB is the pctg point, XY is the local Coordinates

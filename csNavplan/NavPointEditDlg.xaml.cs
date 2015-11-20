@@ -17,8 +17,8 @@ namespace csNavplan
 {
     public partial class NavPointEditDlg : Window
     {
-        BasePoint Original;
-        public BasePoint Final { get; set; }
+        BaseNavPoint Original;
+        public BaseNavPoint Final { get; set; }
 
         public CoordinateType CoordinateType
         {
@@ -69,7 +69,7 @@ namespace csNavplan
 
         Point PctPoint;
 
-        public NavPointEditDlg(Point pp, BasePoint a = null, CoordinateType t = CoordinateType.Local ) // if a == null it is for a new point
+        public NavPointEditDlg(Point pp, BaseNavPoint a = null, CoordinateType t = CoordinateType.Local ) // if a == null it is for a new point
         {
             DataContext = this;
             PctPoint = pp;

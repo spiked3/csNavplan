@@ -10,7 +10,7 @@ using System.Windows;
 
 namespace csNavplan
 {
-    public class WayPointCollection : SortableObservableCollection<BasePoint>
+    public class WayPointCollection : SortableObservableCollection<BaseNavPoint>
     {
         
     }

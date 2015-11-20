@@ -277,7 +277,7 @@ namespace csNavplan
 
             Point pp = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
 
-            BasePoint estimate = Plan.NavPointAtPctPoint(pp);
+            BaseNavPoint estimate = Plan.NavPointAtPctPoint(pp);
 
             var d = new NavPointEditDlg(pp, estimate, Plan.CoordinateType);
             d.Owner = this;
@@ -502,7 +502,7 @@ namespace csNavplan
 
             Point pp = ScreenPoint2Pct(new Point(lastMouseRightX, lastMouseRightY));
 
-            BasePoint estimate = Plan.NavPointAtPctPoint(pp);
+            BaseNavPoint estimate = Plan.NavPointAtPctPoint(pp);
 
             var d = new NavPointEditDlg(pp, estimate, Plan.CoordinateType);
             d.Owner = this;

@@ -45,18 +45,18 @@ namespace csNavplan
         PlanImage _PlanImage;
 
         [ExpandableObject]
-        public BasePoint Align1 { get { return _Align1; } set { _Align1 = value; OnPropertyChanged(); } }
-        BasePoint _Align1;
+        public ViewPoint Align1 { get { return _Align1; } set { _Align1 = value; OnPropertyChanged(); } }
+        ViewPoint _Align1;
 
         [ExpandableObject]
-        public BasePoint Align2 { get { return _Align2; } set { _Align2 = value; OnPropertyChanged(); } }
-        BasePoint _Align2;
+        public ViewPoint Align2 { get { return _Align2; } set { _Align2 = value; OnPropertyChanged(); } }
+        ViewPoint _Align2;
 
         public bool isAligned { get { return Align1 != null && Align2 != null; } }
 
         [ExpandableObject]
-        public BasePoint Origin { get { return _Origin; } set { _Origin = value; OnPropertyChanged(); } }
-        BasePoint _Origin;
+        public ViewPoint Origin { get { return _Origin; } set { _Origin = value; OnPropertyChanged(); } }
+        ViewPoint _Origin;
 
         public bool isOriginValid { get { return isAligned && Origin != null; } }
 
@@ -67,15 +67,11 @@ namespace csNavplan
         public Point ViewSize { get { return _ViewSize; } set { _ViewSize = value; OnPropertyChanged(); } }
         Point _ViewSize;
 
-        // XY location in meters of lower left based on Align1, of original image
-        public Point ViewOrigin { get { return _ViewOrigin; } set { _ViewOrigin = value; OnPropertyChanged(); } }
-        Point _ViewOrigin; 
-
         // todo implement ruler
-        public BasePoint RulerStart { get { return _RulerStart; } set { _RulerStart = value; OnPropertyChanged(); } }
-        BasePoint _RulerStart;
-        public BasePoint RulerEnd { get { return _RulerEnd; } set { _RulerEnd = value; OnPropertyChanged(); } }
-        BasePoint _RulerEnd;
+        public BaseNavPoint RulerStart { get { return _RulerStart; } set { _RulerStart = value; OnPropertyChanged(); } }
+        BaseNavPoint _RulerStart;
+        public BaseNavPoint RulerEnd { get { return _RulerEnd; } set { _RulerEnd = value; OnPropertyChanged(); } }
+        BaseNavPoint _RulerEnd;
 
         [JsonIgnore]
         static readonly JsonSerializerSettings settings = new JsonSerializerSettings
@@ -108,27 +104,12 @@ namespace csNavplan
                 double pctDistanceBetweenAlignsX = Math.Abs(Align2.PctPoint.X - Align1.PctPoint.X);
                 double pctDistanceBetweenAlignsY = Math.Abs(Align2.PctPoint.Y - Align1.PctPoint.Y);
 
-                if (Align1 is WorldPoint)
                     ViewSize = new Point(
-                        Math.Abs(((WorldPoint)Align2).Utm.Easting - ((WorldPoint)Align1).Utm.Easting) / pctDistanceBetweenAlignsX,
-                        Math.Abs(((WorldPoint)Align2).Utm.Northing - ((WorldPoint)Align1).Utm.Northing) / pctDistanceBetweenAlignsY
-                    );
-                else
-                    ViewSize = new Point(
-                        Math.Abs(((LocalPoint)Align2).XY.X - ((LocalPoint)Align1).XY.X) / pctDistanceBetweenAlignsX,
-                        Math.Abs(((LocalPoint)Align2).XY.Y - ((LocalPoint)Align1).XY.Y) / pctDistanceBetweenAlignsY
+                        Math.Abs(Align2.XY.X - Align1.XY.X) / pctDistanceBetweenAlignsX,
+                        Math.Abs(Align2.XY.Y - Align1.XY.Y) / pctDistanceBetweenAlignsY
                     );
 
-                if (Align1 is WorldPoint)
-                {
-                    var a1 = (WorldPoint)Align1; 
-                    ViewOrigin = 
-                        new Point(a1.Utm.Easting - (a1.PctPoint.X * ViewSize.X ), a1.Utm.Northing - (a1.PctPoint.Y * ViewSize.Y));
-                }
-                else
-                    ViewOrigin = new Point(((LocalPoint)Align1).XY.X, ((LocalPoint)Align1).XY.Y);
-
-                var t = $"Plan::RecalcView Origin({ViewOrigin.X:F5}, {ViewOrigin.Y:F5}), Size({ViewSize.X:F5}, {ViewSize.Y:F5})";
+                var t = $"Plan::RecalcView Size({ViewSize.X:F5}, {ViewSize.Y:F5})";
                 MainWindow.Message(t);
                 System.Diagnostics.Trace.WriteLine(t);
             }
@@ -136,7 +117,7 @@ namespace csNavplan
 
         //percents are view relative, XY are coordinate relative (up y is positive)
         // locals work, dont touch
-        public BasePoint NavPointAtPctPoint(Point pp)
+        public BaseNavPoint NavPointAtPctPoint(Point pp)
         {
             if (!isAligned)
             {
@@ -151,10 +132,10 @@ namespace csNavplan
             if (CoordinateType == CoordinateType.Local)
                 return new LocalPoint(pp, new Point(xPos, yPos));
             else
-                return new WorldPoint(pp, new Utm(ViewOrigin.X + xPos, ViewOrigin.Y + yPos, ((WorldPoint)Align1).Utm.Zone));
+                throw new NotImplementedException();
         }
 
-        public Point PctPointAtNavPoint(BasePoint point)
+        public Point PctPointAtNavPoint(BaseNavPoint point)
         {
             if (!isAligned)
             {
@@ -166,10 +147,7 @@ namespace csNavplan
                     1 - ((LocalPoint)point).XY.Y / ViewSize.Y);
             else
             {
-                //+here, 
-                var x = ((WorldPoint)point).Utm.Easting - ViewOrigin.X;
-                var y = ((WorldPoint)point).Utm.Northing + ViewOrigin.Y;
-                return new Point(x / ViewSize.X, 1 -(y / ViewSize.Y));
+                throw new NotImplementedException();
             }
         }
 
@@ -270,14 +248,15 @@ namespace csNavplan
             // todo someday maybe some sort of templates
             StringBuilder b = new StringBuilder($"{{\"ResetHdg\":{initialHeading},\"WayPoints\":[");
             bool firstTime = true;
-            foreach (BasePoint w in WayPoints)
+            foreach (BaseNavPoint w in WayPoints)
             {
                 if (!firstTime)
                     b.Append(",");
                 else
                     firstTime = false;
-                //Point local = Pct2Local(w.XY);
-                Point local = w.GetLocalXY(Origin);
+
+                Point local = w.XY;
+                
                 b.AppendLine($"[{local.X}, {local.Y}, {(w.isAction ? 1 : 0)}]");
             }
             return b.AppendLine($"]}}").ToString();
